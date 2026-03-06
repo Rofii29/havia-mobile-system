@@ -8,7 +8,7 @@ import {
   MapPin, ArrowRight, LogIn, LogOut, Activity, 
   ChevronRight, Plus, Home, User, Info, Users, Key
 } from 'lucide-react';
-import { loginWithToken } from './actions';
+import { loginWithToken, fetchFromApi } from './actions';
 
 export default function HaviaMobileApp() {
    // State Management
@@ -22,7 +22,44 @@ export default function HaviaMobileApp() {
   const [apiToken, setApiToken] = useState('');
   const [loginEmail, setLoginEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [userData, setUserData] = useState<any>(null);
+  
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [isLoadingNotif, setIsLoadingNotif] = useState(false);
+  
+  const [projects, setProjects] = useState<any[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
+  const [activeProjectName, setActiveProjectName] = useState<string>('');
+  const [projectTasks, setProjectTasks] = useState<any[]>([]);
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+
+  // Helper to ensure we only show real images or generate initials
+  const getUserImage = (user: any) => {
+    if (!user) return "https://ui-avatars.com/api/?name=User&background=D4AF37&color=111";
+    
+    // Check if the image from API is valid and NOT the default RISE CRM avatar
+    const imgUrl = user.image || user.avatar || "";
+    
+    // Check if the image string is actually a PHP serialized array from RISE (as seen in the console error)
+    // Example: a:1:{i:0;a:2:{s:9:"file_name";s:29:"_file69aa5489918ac-avatar.png";...
+    const serializedMatch = imgUrl.match(/"file_name";s:\d+:"([^"]+)"/);
+    if (serializedMatch && serializedMatch[1]) {
+      // It's a real uploaded file, construct the RISE CRM profile image path
+      return `https://brain.havia.id/files/profile_images/${serializedMatch[1]}`;
+    }
+
+    if (imgUrl.trim() === "" || imgUrl.includes("avatar.jpg") || imgUrl.includes("default") || imgUrl === "null") {
+      const init1 = user.first_name || "User";
+      const init2 = user.last_name || "";
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(init1)}+${encodeURIComponent(init2)}&background=D4AF37&color=111`;
+    }
+    
+    // Optional fallback if it's already a clean URL
+    return imgUrl;
+  };
 
   // Colors based on Logo
   const colors = {
@@ -43,12 +80,133 @@ export default function HaviaMobileApp() {
     return () => clearInterval(timer);
   }, []);
 
-  // Navigation Handlers
+  // Check Auth Status on Mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const savedUserStr = localStorage.getItem('havia_user');
+        const savedToken = localStorage.getItem('havia_token');
+        
+        if (savedUserStr && savedToken) {
+          // 1. Secara instan load data dari cache (Local Storage) supaya tampil cepat
+          const savedUser = JSON.parse(savedUserStr);
+          setUserData(savedUser);
+          setApiToken(savedToken);
+          setCurrentView('dashboard');
+          setActiveNav('home');
+          setIsCheckingAuth(false);
+
+          // 2. Lakukan Background Fetch/Sinkronisasi ke server secara diam-diam
+          try {
+            const result = await loginWithToken(savedToken);
+            if (result.success && result.data) {
+              const users = result.data;
+              let latestUser = null;
+              
+              if (Array.isArray(users)) {
+                latestUser = users.find((u: any) => u.email === savedUser.email);
+              } else if (users && typeof users === 'object') {
+                if (users.email === savedUser.email) {
+                   latestUser = users;
+                }
+              }
+
+              if (latestUser) {
+                // Update state & cache dengan data terbaru dari server
+                setUserData(latestUser);
+                localStorage.setItem('havia_user', JSON.stringify(latestUser));
+              }
+            }
+          } catch (syncError) {
+            // Abaikan error saat sinkronisasi diam-diam, biarkan user tetap pakai data cache
+            console.warn("Background sync failed:", syncError);
+          }
+        } else {
+           setIsCheckingAuth(false);
+        }
+      } catch (e) {
+        console.error("Error reading auth from storage", e);
+        setIsCheckingAuth(false);
+      }
+    };
+    
+    checkAuth();
+  }, []);
+
   const handleNav = (view: string, nav?: string | null, title: string = '') => {
     setCurrentView(view);
     if (nav) setActiveNav(nav);
     if (title) setSubpageTitle(title);
   };
+
+  // Fetch Notifications when navigating to the Notifications page
+  useEffect(() => {
+    if (currentView === 'subpage' && apiToken) {
+      if (subpageTitle === 'Notifikasi') {
+        const loadNotif = async () => {
+          setIsLoadingNotif(true);
+          try {
+            console.log("Mencoba tarik data dari /api/notifications...");
+            const res = await fetchFromApi('notifications', apiToken);
+            console.log("HASIL FETCH NOTIF:", res);
+            
+            if (res.success && Array.isArray(res.data)) {
+              setNotifications(res.data);
+            } else {
+              console.warn("Could not load notifications array", res);
+            }
+          } catch (e) {
+            console.error("Failed fetching notifications", e);
+          } finally {
+            setIsLoadingNotif(false);
+          }
+        };
+        loadNotif();
+      } else if (subpageTitle === 'Project') {
+        const loadProjects = async () => {
+          setIsLoadingProjects(true);
+          try {
+            console.log("Mencoba tarik data dari /api/projects...");
+            const res = await fetchFromApi('projects', apiToken);
+            console.log("HASIL FETCH PROJECTS:", res);
+            
+            if (res.success && Array.isArray(res.data)) {
+              setProjects(res.data);
+            } else {
+              console.warn("Could not load projects array", res);
+            }
+          } catch (e) {
+            console.error("Failed fetching projects", e);
+          } finally {
+             setIsLoadingProjects(false);
+          }
+        };
+        loadProjects();
+      } else if (subpageTitle === 'Project Tasks' && activeProjectId) {
+        const loadTasks = async () => {
+          setIsLoadingTasks(true);
+          try {
+            console.log(`Mencoba tarik data dari /api/tasks?project_id=${activeProjectId}...`);
+            const res = await fetchFromApi(`tasks?project_id=${activeProjectId}`, apiToken);
+            console.log("HASIL FETCH TASKS:", res);
+            
+            if (res.success && Array.isArray(res.data)) {
+              setProjectTasks(res.data);
+            } else {
+              setProjectTasks([]);
+              console.warn("Could not load tasks array", res);
+            }
+          } catch (e) {
+            console.error("Failed fetching tasks", e);
+            setProjectTasks([]);
+          } finally {
+             setIsLoadingTasks(false);
+          }
+        };
+        loadTasks();
+      }
+    }
+  }, [currentView, subpageTitle, apiToken]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
@@ -88,6 +246,11 @@ export default function HaviaMobileApp() {
 
       if (matchedUser) {
         setUserData(matchedUser);
+        
+        // Simpan data login agar tidak perlu login lagi setelah refresh
+        localStorage.setItem('havia_user', JSON.stringify(matchedUser));
+        localStorage.setItem('havia_token', apiToken);
+
         setCurrentView('dashboard');
         setActiveNav('home');
         showToast('Berhasil masuk aplikasi');
@@ -103,34 +266,135 @@ export default function HaviaMobileApp() {
 
   // --- Subpage Content Components ---
   const ProyekContent = () => (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-      <div style={{ backgroundColor: colors.card, borderColor: colors.border }} className="p-5 rounded-2xl border">
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-bold text-white">RS Edelweiss</h4>
-          <span className="text-[10px] bg-green-500/20 text-green-400 px-2 py-1 rounded font-bold">ON TRACK</span>
-        </div>
-        <p style={{ color: colors.textMuted }} className="text-xs mb-4 flex items-center gap-1"><MapPin className="w-3 h-3" /> Bandung, Jawa Barat</p>
-        <div className="w-full bg-neutral-800 h-2 rounded-full overflow-hidden mb-2">
-          <div style={{ backgroundColor: colors.gold }} className="h-full w-[85%]"></div>
-        </div>
-        <div style={{ color: colors.textMuted }} className="flex justify-between text-xs">
-          <span>Struktur Lt. 4</span>
-          <span style={{ color: colors.gold }} className="font-bold">85%</span>
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-32">
+      
+      {/* Header Menu Project */}
+      <div className="relative z-10 bg-gradient-to-b from-[#111] to-transparent border border-neutral-800/50 rounded-3xl p-6 shadow-xl mb-6">
+        <div className="flex justify-center gap-12 w-full">
+          <button onClick={() => { setActiveProjectId(null); handleNav('subpage', null, 'Semua Task'); }} className="flex flex-col items-center gap-4 group active:scale-95 transition-transform">
+            <div className="w-[85px] h-[85px] btn-3d flex items-center justify-center group-hover:btn-3d-hover transition-all duration-300 relative z-20">
+              <ClipboardList className="w-8 h-8 text-neutral-400 group-hover:text-[#D4AF37] transition-colors drop-shadow-md relative z-10" strokeWidth={1.5} />
+            </div>
+            <span className="text-[10px] font-bold tracking-widest text-neutral-400 group-hover:text-white transition-colors uppercase relative z-10">Task</span>
+          </button>
+          
+          <button onClick={() => showToast('Membuka Jadwal Induk...')} className="flex flex-col items-center gap-4 group active:scale-95 transition-transform">
+            <div className="w-[85px] h-[85px] btn-3d flex items-center justify-center group-hover:btn-3d-hover transition-all duration-300 relative z-20">
+              <Calendar className="w-8 h-8 text-neutral-400 group-hover:text-[#D4AF37] transition-colors drop-shadow-md relative z-10" strokeWidth={1.5} />
+            </div>
+            <span className="text-[10px] font-bold tracking-widest text-neutral-400 group-hover:text-white transition-colors uppercase relative z-10">Jadwal</span>
+          </button>
         </div>
       </div>
-      <div style={{ backgroundColor: colors.card, borderColor: colors.border }} className="p-5 rounded-2xl border">
-        <div className="flex justify-between items-start mb-2">
-          <h4 className="font-bold text-white">Kreativa School</h4>
-          <span className="text-[10px] bg-yellow-500/20 text-yellow-400 px-2 py-1 rounded font-bold">DELAY</span>
+
+      <div className="px-1 space-y-4">
+      {isLoadingProjects ? (
+        <div className="flex flex-col items-center justify-center py-20 bg-[#111] rounded-3xl border border-neutral-800">
+           <div className="w-16 h-16 rounded-full bg-[#D4AF37]/10 flex items-center justify-center mb-4">
+               <Activity className="w-8 h-8 text-[#D4AF37] animate-pulse" />
+           </div>
+           <p className="text-xs text-neutral-400 uppercase tracking-widest font-bold">Sinkronisasi Project...</p>
         </div>
-        <p style={{ color: colors.textMuted }} className="text-xs mb-4 flex items-center gap-1"><MapPin className="w-3 h-3" /> Kota Baru, Bandung</p>
-        <div className="w-full bg-neutral-800 h-2 rounded-full overflow-hidden mb-2">
-          <div className="bg-yellow-500 h-full w-[40%]"></div>
+      ) : projects.length > 0 ? (
+        projects.map((project: any, index: number) => {
+           const progress = parseInt(project.progress || project.total_progress || "0", 10);
+           const isDone = progress === 100 || String(project.status).toLowerCase() === 'completed';
+           let statusText = project.status_title || project.status || (isDone ? 'COMPLETED' : 'IN PROGRESS');
+           statusText = String(statusText).toUpperCase();
+           if (statusText === 'OPEN') statusText = 'AKTIF';
+           if (statusText === 'COMPLETED') statusText = 'SELESAI';
+           
+           return (
+            <div 
+              key={project.id || index} 
+              onClick={() => { 
+                setActiveProjectId(project.id); 
+                setActiveProjectName(project.title); 
+                handleNav('subpage', null, 'Project Tasks'); 
+              }}
+              style={{ backgroundColor: colors.card, borderColor: colors.border }} 
+              className="rounded-3xl border relative overflow-hidden group hover:border-[#D4AF37]/50 transition-all duration-300 shadow-xl cursor-pointer active:scale-[0.98]"
+            >
+              
+              <div className={`absolute -right-16 -top-16 w-40 h-40 rounded-full blur-3xl opacity-10 pointer-events-none transition-colors duration-500 ${isDone ? 'bg-green-500' : 'bg-[#D4AF37]'}`}></div>
+
+              <div className="p-5">
+                <div className="flex justify-between items-start mb-6 relative z-10">
+                  <div className="flex gap-4 items-center flex-1 pr-4">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner shrink-0 transition-colors ${isDone ? 'bg-green-500/10 border-green-500/20' : 'bg-[#D4AF37]/10 border-[#D4AF37]/20 group-hover:bg-[#D4AF37]/20'}`}>
+                      {isDone ? <Activity className="w-6 h-6 text-green-400" /> : <Briefcase className="w-6 h-6 text-[#D4AF37]" />}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-base leading-tight group-hover:text-[#D4AF37] transition-colors">{project.title || `Project ${project.id}`}</h4>
+                      {project.client_name ? (
+                        <p className="text-[10px] text-neutral-400 mt-1 flex items-center gap-1">
+                          <User className="w-3 h-3 text-neutral-500" /> {project.client_name}
+                        </p>
+                      ) : (
+                        <p className="text-[10px] text-neutral-500 mt-1 uppercase tracking-widest">Internal Project</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <span className={`text-[9px] px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border shrink-0 ${isDone ? 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.2)]' : 'bg-[#D4AF37]/10 text-[#D4AF37] border-[#D4AF37]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]'}`}>
+                    {statusText}
+                  </span>
+                </div>
+                
+                <div className="flex gap-3 mb-5 relative z-10">
+                  {project.start_date && (
+                    <div className="bg-neutral-900/80 px-3 py-2 rounded-xl flex-1 border border-neutral-800/50 flex items-center gap-2.5">
+                      <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                      <div>
+                        <p className="text-[8px] text-neutral-500 uppercase tracking-widest mb-0.5">Mulai</p>
+                        <p className="text-[10px] text-white font-medium">{project.start_date}</p>
+                      </div>
+                    </div>
+                  )}
+                  {project.deadline && (
+                    <div className="bg-red-500/5 px-3 py-2 rounded-xl flex-1 border border-red-500/10 flex items-center gap-2.5">
+                      <Calendar className="w-3.5 h-3.5 text-red-500/80" />
+                      <div>
+                        <p className="text-[8px] text-red-500/80 uppercase tracking-widest mb-0.5">Deadline</p>
+                        <p className="text-[10px] text-red-100 font-medium">{project.deadline}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="pt-4 border-t border-neutral-800/50 mt-2 relative z-10">
+                  <div className="flex justify-between items-end mb-2.5">
+                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-bold">
+                       Status Progress
+                    </span>
+                    <span style={{ color: isDone ? '#22c55e' : colors.gold }} className="text-base leading-none font-bold font-mono">
+                      {progress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-neutral-900 h-2.5 rounded-full overflow-hidden shadow-inner relative border border-black backdrop-blur-sm">
+                    <div 
+                       style={{ 
+                         backgroundColor: isDone ? '#22c55e' : colors.gold, 
+                         width: `${progress}%` 
+                       }} 
+                       className="absolute top-0 left-0 bottom-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(212,175,55,0.4)]"
+                    >
+                      <div className="absolute inset-0 bg-white/20 w-full animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+           );
+        })
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 bg-[#111] rounded-3xl border border-neutral-800 border-dashed">
+          <div className="w-16 h-16 rounded-full bg-neutral-900 flex items-center justify-center mb-4 border border-neutral-800">
+             <Briefcase className="w-6 h-6 text-neutral-600" />
+          </div>
+          <p className="text-xs text-neutral-500 tracking-widest uppercase font-bold text-center px-8">Belum ada project<br/>yang ditugaskan</p>
         </div>
-        <div style={{ color: colors.textMuted }} className="flex justify-between text-xs">
-          <span>Finishing Interior</span>
-          <span className="text-yellow-400 font-bold">40%</span>
-        </div>
+      )}
       </div>
     </div>
   );
@@ -172,7 +436,7 @@ export default function HaviaMobileApp() {
         <div className="relative w-28 h-28 mb-4">
           <div className="absolute inset-0 rounded-full border border-[#D4AF37]/50 shadow-[0_0_20px_rgba(212,175,55,0.2)]"></div>
           <div className="absolute inset-[3px] rounded-full bg-[#111] z-10 flex items-center justify-center overflow-hidden">
-            <img src={userData?.image || "https://4nesia.com/img/andiagus2.png"} className="w-full h-full object-cover" alt={userData?.first_name || "M. Rofii Sultan"} />
+            <img src={getUserImage(userData)} className="w-full h-full object-cover" alt={userData?.first_name || "User"} />
           </div>
         </div>
         <h2 className="text-2xl font-bold text-white tracking-wide">{userData?.first_name} {userData?.last_name}</h2>
@@ -183,7 +447,55 @@ export default function HaviaMobileApp() {
         </div>
       </div>
 
-      <div className="space-y-3 pt-4 border-t border-neutral-800">
+      {/* Informasi Personal Section */}
+      <div className="space-y-3 pt-6 border-t border-neutral-800">
+        <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold mb-3 pl-1">Informasi Personal</p>
+        
+        <div style={{ backgroundColor: colors.card, borderColor: colors.border }} className="p-4 rounded-2xl border space-y-4">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Nomor Telepon</span>
+            <span className="text-sm text-white font-medium">{userData?.phone || 'Belum diatur'}</span>
+          </div>
+          
+          <div className="flex flex-col gap-1 pt-3 border-t border-neutral-800">
+            <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Alamat (Mailing)</span>
+            <span className="text-sm text-white font-medium break-words leading-relaxed">{userData?.address || 'Belum diatur'}</span>
+          </div>
+
+          {(userData?.alternative_phone || userData?.alternative_address) && (
+            <>
+              {userData?.alternative_phone && (
+                <div className="flex flex-col gap-1 pt-3 border-t border-neutral-800">
+                  <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Telepon Alternatif</span>
+                  <span className="text-sm text-white font-medium">{userData?.alternative_phone}</span>
+                </div>
+              )}
+              {userData?.alternative_address && (
+                <div className="flex flex-col gap-1 pt-3 border-t border-neutral-800">
+                  <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Alamat Alternatif</span>
+                  <span className="text-sm text-white font-medium break-words leading-relaxed">{userData?.alternative_address}</span>
+                </div>
+              )}
+            </>
+          )}
+          
+          {(userData?.gender || userData?.dob) && (
+            <div className="grid grid-cols-2 gap-4 pt-3 border-t border-neutral-800">
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Gender</span>
+                <span className="text-sm text-white font-medium capitalize">{userData?.gender || '-'}</span>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] text-neutral-500 uppercase tracking-widest">Tgl Lahir</span>
+                <span className="text-sm text-white font-medium">{userData?.dob || '-'}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Pengaturan Akun Section */}
+      <div className="space-y-3 pt-6">
         <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-bold mb-3 pl-1">Pengaturan Akun</p>
         
         {/* Edit Profile Button */}
@@ -217,7 +529,14 @@ export default function HaviaMobileApp() {
 
       <div className="pt-6">
         {/* Logout Button */}
-        <button onClick={() => { handleNav('login'); showToast('Berhasil Logout'); }} style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)' }} className="w-full text-left flex items-center justify-center gap-3 p-4 rounded-2xl border active:scale-[0.98] transition-all hover:bg-red-500/10 group">
+        <button onClick={() => { 
+          localStorage.removeItem('havia_user');
+          localStorage.removeItem('havia_token');
+          setUserData(null);
+          setApiToken('');
+          handleNav('login'); 
+          showToast('Berhasil Logout'); 
+        }} style={{ backgroundColor: 'rgba(239, 68, 68, 0.05)', borderColor: 'rgba(239, 68, 68, 0.2)' }} className="w-full text-left flex items-center justify-center gap-3 p-4 rounded-2xl border active:scale-[0.98] transition-all hover:bg-red-500/10 group">
           <LogOut className="w-5 h-5 text-red-500 group-hover:scale-110 transition-transform" />
           <h4 className="font-bold text-red-500 text-sm tracking-wider uppercase">Keluar Aplikasi</h4>
         </button>
@@ -225,11 +544,187 @@ export default function HaviaMobileApp() {
     </div>
   );
 
+  const NotifikasiContent = () => (
+    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-32">
+      <div className="flex items-center justify-between mb-4 pl-1">
+        <h3 className="text-sm font-bold text-white tracking-wide">Pemberitahuan</h3>
+        <span style={{ color: colors.gold }} className="text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:opacity-80">Tandai Dibaca</span>
+      </div>
+
+      {isLoadingNotif ? (
+        <div className="flex flex-col items-center justify-center py-10">
+           <Activity className="w-8 h-8 text-[#D4AF37] animate-pulse mb-3" />
+           <p className="text-xs text-neutral-500 uppercase tracking-widest">Memuat Data...</p>
+        </div>
+      ) : notifications.length > 0 ? (
+        notifications.map((notif: any, index: number) => (
+          <div key={notif.id || index} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="p-4 rounded-2xl border flex gap-4 active:scale-[0.98] transition-transform cursor-pointer relative overflow-hidden group">
+            {/* Indikator Unread */}
+            {notif.is_read === "0" && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#D4AF37]"></div>}
+            
+            <div className="w-12 h-12 rounded-full bg-neutral-800 flex items-center justify-center border border-neutral-700 shrink-0">
+              <Bell className="w-5 h-5 text-neutral-400" />
+            </div>
+            <div className="flex-1">
+              <div className="flex justify-between items-start mb-1">
+                <h4 className={`font-bold text-sm ${notif.is_read === "0" ? 'text-white' : 'text-neutral-300'}`}>
+                  {notif.event || notif.title || 'Pemberitahuan'}
+                </h4>
+                <span className="text-[9px] text-neutral-500 font-medium">
+                  {notif.created_at ? new Date(notif.created_at).toLocaleDateString('id-ID') : ''}
+                </span>
+              </div>
+              <p style={{ color: colors.textMuted }} className="text-xs leading-relaxed mb-1">
+                {/* Deskripsi pesan atau notif */}
+                {notif.description || notif.message || 'Anda memiliki notifikasi baru.'}
+              </p>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="text-center py-10 opacity-50">
+          <Bell className="w-12 h-12 mx-auto mb-3 text-neutral-600" />
+          <p className="text-xs text-neutral-500 tracking-widest">TIDAK ADA NOTIFIKASI</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const SemuaTaskContent = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-32">
+      <div className="flex items-center justify-between mb-4 pl-1">
+        <h3 className="text-sm font-bold text-white tracking-wide">Semua Task Proyek</h3>
+        <span style={{ color: colors.gold }} className="text-[10px] font-bold uppercase tracking-widest">{projectTasks.length} Tugas</span>
+      </div>
+
+      {isLoadingTasks ? (
+        <div className="flex flex-col items-center justify-center py-20">
+           <Activity className="w-8 h-8 text-[#D4AF37] animate-pulse mb-3" />
+           <p className="text-xs text-neutral-500 uppercase tracking-widest">Memuat Tugas...</p>
+        </div>
+      ) : projectTasks.length > 0 ? (
+        <div className="space-y-4">
+          {projectTasks.map((task: any, index: number) => {
+            const isDone = String(task.status).toLowerCase() === 'done' || String(task.status).toLowerCase() === 'completed';
+            const proj = projects.find(p => String(p.id) === String(task.project_id));
+            const projName = proj ? proj.title : `Project ${task.project_id}`;
+            
+            return (
+              <div key={task.id || index} style={{ backgroundColor: colors.card, borderColor: isDone ? 'rgba(34,197,94,0.2)' : colors.border }} className="p-4 rounded-3xl border relative overflow-hidden group shadow-lg">
+                <div className="flex gap-4 items-start relative z-10">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 mt-1 ${isDone ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-neutral-800 border-neutral-700 text-neutral-400'}`}>
+                    <ClipboardList className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className={`font-bold text-sm mb-1 ${isDone ? 'text-green-400/90 line-through' : 'text-white'}`}>{task.title}</h4>
+                    <span className="inline-flex items-center gap-1.5 px-2 py-1 bg-neutral-900 rounded-md border border-neutral-800 text-[9px] font-bold uppercase tracking-widest text-[#D4AF37] mb-2">
+                       <Briefcase className="w-3 h-3" /> {projName}
+                    </span>
+                    <p style={{ color: colors.textMuted }} className="text-xs leading-relaxed line-clamp-2">
+                      {task.description?.replace(/(<([^>]+)>)/gi, "") || 'Tidak ada deskripsi rinci.'}
+                    </p>
+                    
+                    <div className="flex items-center gap-4 mt-4 pt-4 border-t border-neutral-800/50">
+                      {task.start_date && (
+                        <div>
+                          <p className="text-[8px] text-neutral-500 uppercase tracking-widest mb-0.5">Mulai</p>
+                          <p className="text-[10px] text-white font-medium">{task.start_date}</p>
+                        </div>
+                      )}
+                      {task.deadline && (
+                        <div>
+                          <p className="text-[8px] text-red-500/80 uppercase tracking-widest mb-0.5">Deadline</p>
+                          <p className="text-[10px] text-red-100 font-medium">{task.deadline}</p>
+                        </div>
+                      )}
+                      <div className="ml-auto">
+                        <span className={`text-[8px] px-2 py-1 rounded font-bold uppercase tracking-wider border ${isDone ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-blue-500/10 text-blue-400 border-blue-500/20'}`}>
+                          {String(task.status_title || task.status || 'Aktif').toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 bg-[#111] rounded-3xl border border-neutral-800 border-dashed">
+          <ClipboardList className="w-12 h-12 text-neutral-600 mb-4" />
+          <p className="text-xs text-neutral-500 tracking-widest uppercase font-bold text-center px-8">Tidak ada task<br/>untuk saat ini</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const ProjectTasksContent = () => (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-32">
+      <div className="flex items-center justify-between mb-4 pl-1">
+        <div>
+          <h3 className="text-sm font-bold text-white tracking-wide">Tasks: <span className="text-[#D4AF37]">{activeProjectName || 'Project'}</span></h3>
+        </div>
+        <span style={{ color: colors.gold }} className="text-[10px] font-bold uppercase tracking-widest">{projectTasks.length} Tugas</span>
+      </div>
+
+      {isLoadingTasks ? (
+        <div className="flex flex-col items-center justify-center py-20">
+           <Activity className="w-8 h-8 text-[#D4AF37] animate-pulse mb-3" />
+           <p className="text-xs text-neutral-500 uppercase tracking-widest">Memuat Tugas Proyek...</p>
+        </div>
+      ) : projectTasks.length > 0 ? (
+        <div className="space-y-4">
+          {projectTasks.map((task: any, index: number) => {
+            const isDone = String(task.status).toLowerCase() === 'done' || String(task.status).toLowerCase() === 'completed';
+            
+            return (
+              <div key={task.id || index} style={{ backgroundColor: colors.card, borderColor: isDone ? 'rgba(34,197,94,0.2)' : colors.border }} className="p-4 rounded-3xl border relative overflow-hidden group shadow-lg">
+                <div className="flex gap-4 items-start relative z-10">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 mt-1 ${isDone ? 'bg-green-500/10 border-green-500/20 text-green-400' : 'bg-[#D4AF37]/10 border-[#D4AF37]/20 text-[#D4AF37]'}`}>
+                    <ClipboardList className="w-5 h-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className={`font-bold text-sm mb-2 ${isDone ? 'text-green-400/90 line-through' : 'text-white'}`}>{task.title}</h4>
+                    <p style={{ color: colors.textMuted }} className="text-xs leading-relaxed mb-4 line-clamp-2">
+                      {task.description?.replace(/(<([^>]+)>)/gi, "") || 'Tidak ada deskripsi rinci untuk task ini.'}
+                    </p>
+                    
+                    <div className="flex items-center gap-4 pt-4 border-t border-neutral-800/50">
+                      {task.deadline && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-3.5 h-3.5 text-neutral-500" />
+                          <p className="text-[10px] text-neutral-400 font-medium">{task.deadline}</p>
+                        </div>
+                      )}
+                      <div className="ml-auto">
+                        <span className={`text-[9px] px-2 py-1 rounded font-bold uppercase tracking-wider border ${isDone ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-neutral-800 text-neutral-300 border-neutral-700'}`}>
+                          {String(task.status_title || task.status || 'Aktif').toUpperCase()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-20 bg-[#111] rounded-3xl border border-neutral-800 border-dashed">
+          <Calendar className="w-12 h-12 text-neutral-600 mb-4" />
+          <p className="text-xs text-neutral-500 tracking-widest uppercase font-bold text-center px-8">Belum ada task<br/>di proyek ini</p>
+        </div>
+      )}
+    </div>
+  );
+
   const renderSubpageContent = () => {
     switch(subpageTitle) {
       case 'Project': return ProyekContent();
+      case 'Semua Task': return SemuaTaskContent();
+      case 'Project Tasks': return ProjectTasksContent();
       case 'Jadwal': return JadwalContent();
       case 'Akun': return AkunContent();
+      case 'Notifikasi': return NotifikasiContent();
       default: return (
         <div className="flex flex-col items-center justify-center h-64 opacity-50 animate-in fade-in">
           <Info className="w-12 h-12 mb-4" style={{ color: colors.gold }} />
@@ -249,7 +744,7 @@ export default function HaviaMobileApp() {
       </div>
 
       {/* ================= VIEW 1: LOGIN ================= */}
-      {currentView === 'login' && (
+      {currentView === 'login' && !isCheckingAuth && (
         <section className="h-full w-full flex flex-col px-8 relative z-20 animate-in fade-in duration-500">
           <div className="absolute top-[-20%] left-[-20%] w-[80%] h-[50%] bg-neutral-800/20 rounded-full blur-[100px] pointer-events-none"></div>
           <div className="absolute bottom-[-10%] right-[-20%] w-[80%] h-[40%] bg-[#D4AF37]/5 rounded-full blur-[100px] pointer-events-none"></div>
@@ -320,7 +815,7 @@ export default function HaviaMobileApp() {
               <p style={{ color: colors.gold }} className="text-[10px] uppercase tracking-widest mb-1 font-bold">Selamat Pagi, {userData?.first_name || ''}</p>
               <h2 className="text-xl font-bold text-white flex items-center gap-2">Semangat Bekerja! 🚀</h2>
             </div>
-            <button onClick={() => showToast('Tidak ada notifikasi baru')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-10 h-10 rounded-full border flex items-center justify-center relative hover:bg-neutral-800 transition-colors">
+            <button onClick={() => handleNav('subpage', null, 'Notifikasi')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-10 h-10 rounded-full border flex items-center justify-center relative hover:bg-neutral-800 transition-colors">
               <Bell className="w-5 h-5 text-neutral-400" />
               <span style={{ backgroundColor: colors.gold }} className="absolute top-2 right-2 w-2 h-2 rounded-full shadow-[0_0_8px_rgba(212,175,55,0.8)]"></span>
             </button>
@@ -334,7 +829,7 @@ export default function HaviaMobileApp() {
               <div className="flex justify-between items-start relative z-10">
                 <div className="flex items-center gap-4">
                   <div className="w-16 h-16 rounded-full border border-[#D4AF37]/50 p-1">
-                    <img src={userData?.image || "https://4nesia.com/img/andiagus2.png"} className="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="Profile" />
+                    <img src={getUserImage(userData)} className="w-full h-full rounded-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500" alt="Profile" />
                   </div>
                   <div>
                     <h3 className="font-bold text-lg text-white tracking-wide">{userData?.first_name} {userData?.last_name}</h3>
@@ -427,7 +922,7 @@ export default function HaviaMobileApp() {
                 <div className="relative w-36 h-36 mb-6">
                   <div className="absolute inset-0 rounded-full avatar-glow"></div>
                   <div className="absolute inset-[3px] rounded-full bg-[#111] z-10 flex items-center justify-center overflow-hidden">
-                    <img src={userData?.image || "https://4nesia.com/img/andiagus2.png"} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt={userData?.first_name || "Andi Agus Salim"} />
+                    <img src={getUserImage(userData)} className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" alt={userData?.first_name || "User"} />
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-white mb-2 tracking-wide text-center">{userData?.first_name} {userData?.last_name}</h2>
@@ -530,15 +1025,18 @@ export default function HaviaMobileApp() {
 
       {/* ================= VIEW 5: SUBPAGE ================= */}
       {currentView === 'subpage' && (
-        <section className="h-full w-full flex flex-col relative z-40 animate-in slide-in-from-right-4 duration-300">
-          <div style={{ backgroundColor: `${colors.bg}FA` }} className="px-6 py-6 flex items-center justify-between border-b border-white/5 backdrop-blur-md sticky top-0">
+        <section className="h-full w-full flex flex-col relative z-40 animate-in slide-in-from-right-4 duration-300 bg-[#0a0a0a] overflow-hidden">
+          {/* Top Navigation Bar */}
+          <div style={{ backgroundColor: `${colors.bg}FA` }} className="px-6 py-6 flex items-center justify-between border-b border-white/5 backdrop-blur-md sticky top-0 z-[70]">
             <button onClick={() => handleNav('dashboard')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-10 h-10 rounded-full border flex items-center justify-center hover:bg-neutral-800 transition-colors">
               <ArrowLeft className="w-5 h-5 text-white" />
             </button>
             <h2 style={{ color: colors.gold }} className="font-bold text-sm uppercase tracking-widest">{subpageTitle}</h2>
             <div className="w-10"></div>
           </div>
-          <div className="flex-1 p-6 pb-40 overflow-y-auto">
+          
+          {/* Scrollable Content Area */}
+          <div className="flex-1 px-6 pt-6 pb-40 overflow-y-auto scrollbar-hide relative z-10">
             {renderSubpageContent()}
           </div>
         </section>
