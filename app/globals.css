@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
+  --background: #1D1C1B;
   --foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Plus Jakarta Sans", sans-serif;
+  --font-sans: "Open Sans", sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Plus Jakarta Sans", sans-serif;
+  font-family: "Open Sans", sans-serif;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -26,18 +26,18 @@ body {
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Custom gradients */
-.gold-gradient { background: linear-gradient(135deg, #D4AF37 0%, #b59020 100%); }
-.black-card-gradient { background: linear-gradient(135deg, #1f1f1f 0%, #101010 100%); }
+.gold-gradient { background: linear-gradient(135deg, #C69C3D 0%, #a88434 100%); }
+.black-card-gradient { background: linear-gradient(135deg, #413E3D 0%, #101010 100%); }
 
 /* 3D Button Effects */
 .btn-3d {
-  background: linear-gradient(145deg, #1f1f1f 0%, #0d0d0d 100%);
+  background: linear-gradient(145deg, #413E3D 0%, #0d0d0d 100%);
   box-shadow: 7px 7px 14px #040404, -7px -7px 14px #1c1c1c, inset 1px 1px 2px rgba(255,255,255,0.05);
   border: 1px solid #2a2a2a;
   border-radius: 28px;
 }
 .btn-3d-hover {
-  background: linear-gradient(145deg, #D4AF37 0%, #997a00 100%);
+  background: linear-gradient(145deg, #C69C3D 0%, #8c6e2b 100%);
   box-shadow: 5px 5px 15px rgba(212, 175, 55, 0.25), inset 1px 1px 4px rgba(255,255,255,0.4);
   border: 1px solid #f9d77e;
 }
@@ -52,7 +52,7 @@ body {
 /* Avatar glow */
 .avatar-glow::before {
   content: ''; position: absolute; inset: -4px; border-radius: 50%;
-  background: linear-gradient(45deg, #D4AF37, #FFFFFF, #b59020);
+  background: linear-gradient(45deg, #C69C3D, #FFFFFF, #a88434);
   z-index: -1; opacity: 0.5; animation: spin 4s linear infinite;
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -82,3 +82,8 @@ body {
 .slide-in-from-bottom-8 { animation-name: slideInFromBottom8; }
 .duration-300 { animation-duration: 300ms; }
 .duration-500 { animation-duration: 500ms; }
+
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
