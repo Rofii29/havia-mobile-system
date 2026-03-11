@@ -82,9 +82,6 @@ export async function fetchFromApi(endpoint: string, token: string) {
     
     const textRes = await response.text();
     console.log(`=== RAW RESP FROM ${endpoint} ===`, textRes.substring(0, 200));
-    
-    // Save to file for debugging
-    require('fs').writeFileSync(`last_get_response.txt`, textRes);
 
     let parsedRes;
     try {
@@ -275,10 +272,6 @@ export async function putToApi(endpoint: string, token: string, body: Record<str
     
     const textRes = await response.text();
     console.log(`=== RAW PUT RESP FROM ${endpoint} ===`, textRes.substring(0, 300));
-    
-    // Save to file for debugging
-    require('fs').writeFileSync('last_put_response.txt', textRes);
-    require('fs').writeFileSync('last_put_request.txt', formData.toString());
 
     let parsedRes;
     try {
