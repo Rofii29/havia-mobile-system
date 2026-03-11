@@ -43,9 +43,20 @@ export const TaskList: React.FC<{
               </div>
               <div className="flex-1 min-w-0">
                 <h4 className={`font-bold text-base mb-2 truncate ${isDone ? 'text-green-400/90 line-through' : 'text-white'}`}>{task.title}</h4>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1A1818]/60 rounded-lg border border-white/5 text-[9px] font-bold uppercase tracking-widest text-[#C69C3D] mb-3">
-                   <Briefcase className="w-3 h-3" /> {projName}
-                </span>
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1A1818]/60 rounded-lg border border-white/5 text-[9px] font-bold uppercase tracking-widest text-[#C69C3D]">
+                    <Briefcase className="w-3 h-3" /> {projName}
+                  </span>
+                  {task.userRole && (
+                    <span className={`text-[8px] px-1.5 py-1 rounded-lg font-bold uppercase tracking-widest border ${
+                      task.userRole === 'PIC' 
+                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
+                        : 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20'
+                    }`}>
+                      {task.userRole}
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs leading-relaxed text-neutral-400 line-clamp-2 mb-4">
                   {task.description?.replace(/(<([^>]+)>)/gi, "") || 'Tidak ada deskripsi rinci.'}
                 </p>

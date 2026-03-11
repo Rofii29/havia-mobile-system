@@ -104,36 +104,40 @@ export default function HaviaMobileApp() {
         const savedUserStr = localStorage.getItem('havia_user');
         const savedToken = localStorage.getItem('havia_token');
         
-        if (savedUserStr && savedToken) {
-          const savedUser = JSON.parse(savedUserStr);
-          setUserData(savedUser);
-          setApiToken(savedToken);
-          setCurrentView('dashboard');
-          setActiveNav('home');
-          setIsCheckingAuth(false);
-
+        if (savedUserStr && savedToken && savedUserStr !== 'null' && savedToken !== 'null') {
           try {
-            const result = await loginWithToken(savedToken);
-            if (result.success && result.data) {
-              const users = result.data;
-              let latestUser = null;
-              if (Array.isArray(users)) {
-                latestUser = users.find((u: any) => u.email === savedUser.email);
-              } else if (users && typeof users === 'object') {
-                if (users.email === savedUser.email) latestUser = users;
+            const savedUser = JSON.parse(savedUserStr);
+            setUserData(savedUser);
+            setApiToken(savedToken);
+            setCurrentView('dashboard');
+            setActiveNav('home');
+            
+            // Sync with server in background
+            loginWithToken(savedToken).then(result => {
+              if (result.success && result.data) {
+                const users = result.data;
+                let latestUser = null;
+                if (Array.isArray(users)) {
+                  latestUser = users.find((u: any) => u.email === savedUser.email);
+                } else if (users && typeof users === 'object') {
+                  if (users.email === savedUser.email) latestUser = users;
+                }
+                if (latestUser) {
+                  setUserData(latestUser);
+                  localStorage.setItem('havia_user', JSON.stringify(latestUser));
+                }
               }
+            }).catch(e => console.warn("Sync error", e));
 
-              if (latestUser) {
-                setUserData(latestUser);
-                localStorage.setItem('havia_user', JSON.stringify(latestUser));
-              }
-            }
-          } catch (syncError) { console.warn("Background sync failed:", syncError); }
-        } else {
-           setIsCheckingAuth(false);
+          } catch (parseError) {
+            console.error("Failed to parse user data", parseError);
+            localStorage.removeItem('havia_user');
+            localStorage.removeItem('havia_token');
+          }
         }
       } catch (e) {
-        console.error("Error reading auth from storage", e);
+        console.error("Auth check failed", e);
+      } finally {
         setIsCheckingAuth(false);
       }
     };
@@ -178,28 +182,79 @@ export default function HaviaMobileApp() {
 
   // --- DATA FETCHING ---
   const loadProjects = async () => {
+    if (!userData?.id || !apiToken) return;
     setIsLoadingProjects(true);
-    const res = await fetchFromApi('projects', apiToken);
-    if (res.success) setProjects(Array.isArray(res.data) ? res.data : []);
+    
+    // Fetch all projects and all my tasks (including collaborators)
+    const [pRes, tRes] = await Promise.all([
+      fetchFromApi('projects', apiToken),
+      fetchFromApi('tasks', apiToken)
+    ]);
+
+    if (pRes.success && tRes.success) {
+      const allProjects = Array.isArray(pRes.data) ? pRes.data : [];
+      const allTasks = Array.isArray(tRes.data) ? tRes.data : [];
+      const myId = String(userData.id);
+
+      // Map roles to projects
+      const enrichedProjects = allProjects.filter((p: any) => {
+        // Cek apakah user terlibat di project ini via task
+        const projectTasks = allTasks.filter(t => String(t.project_id) === String(p.id));
+        const isAssigned = projectTasks.some(t => String(t.assigned_to) === myId);
+        const isCollab = projectTasks.some(t => t.collaborators && String(t.collaborators).split(',').includes(myId));
+        
+        if (isAssigned) p.userRole = 'PIC';
+        else if (isCollab) p.userRole = 'KOLABORATOR';
+        
+        return isAssigned || isCollab;
+      });
+
+      setProjects(enrichedProjects);
+    } else if (pRes.success) {
+      setProjects([]);
+    }
+    
     setIsLoadingProjects(false);
   };
 
   const loadTasks = async (projectId: string | null = null) => {
+    if (!userData?.id || !apiToken) return;
     setIsLoadingTasks(true);
-    const endpoint = projectId ? `tasks?project_id=${projectId}` : 'tasks';
-    const res = await fetchFromApi(endpoint, apiToken);
-    if (res.success) setProjectTasks(Array.isArray(res.data) ? res.data : []);
+    
+    const res = await fetchFromApi('tasks', apiToken);
+    if (res.success) {
+      const allTasks = Array.isArray(res.data) ? res.data : [];
+      const myId = String(userData.id);
+
+      let myTasks = allTasks.filter((t: any) => 
+        String(t.assigned_to) === myId || 
+        (t.collaborators && String(t.collaborators).split(',').includes(myId))
+      ).map((t: any) => {
+        // Attach role to task
+        t.userRole = String(t.assigned_to) === myId ? 'PIC' : 'KOLABORATOR';
+        return t;
+      });
+
+      if (projectId) {
+        myTasks = myTasks.filter((t: any) => String(t.project_id) === String(projectId));
+      }
+
+      setProjectTasks(myTasks);
+    }
     setIsLoadingTasks(false);
   };
 
   const loadExpenses = async () => {
+    if (!userData?.id || !apiToken) return;
     setIsLoadingExpenses(true);
-    const res = await fetchFromApi('expenses', apiToken);
+    // Filter by staff user_id
+    const res = await fetchFromApi(`expenses?user_id=${userData.id}`, apiToken);
     if (res.success) setExpenses(Array.isArray(res.data) ? res.data : []);
     setIsLoadingExpenses(false);
   };
 
   const loadEvents = async () => {
+    if (!apiToken) return;
     setIsLoadingEvents(true);
     const res = await fetchFromApi('events', apiToken);
     if (res.success) setEvents(Array.isArray(res.data) ? res.data : []);
@@ -207,8 +262,10 @@ export default function HaviaMobileApp() {
   };
 
   const loadAttendances = async () => {
+    if (!userData?.id || !apiToken) return;
     setIsLoadingAttendances(true);
-    const res = await fetchFromApi('attendance', apiToken);
+    // Filter by staff user_id
+    const res = await fetchFromApi(`attendance?user_id=${userData.id}`, apiToken);
     if (res.success) setAttendances(Array.isArray(res.data) ? res.data : []);
     setIsLoadingAttendances(false);
   };
@@ -300,6 +357,15 @@ export default function HaviaMobileApp() {
   };
 
   // --- RENDER ---
+  if (isCheckingAuth) {
+    return (
+      <div style={{ backgroundColor: colors.bg }} className="h-screen w-full flex flex-col items-center justify-center">
+        <div className="w-16 h-16 rounded-full border-t-2 border-[#C69C3D] animate-spin mb-4"></div>
+        <p className="text-[#C69C3D] text-[10px] font-bold uppercase tracking-widest animate-pulse">Autentikasi Havia...</p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ backgroundColor: colors.bg, fontFamily: '"Open Sans", sans-serif' }} 
       className="text-white h-screen w-full overflow-hidden relative selection:bg-[#C69C3D] selection:text-black">

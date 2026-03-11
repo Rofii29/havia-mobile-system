@@ -32,83 +32,86 @@ export const ProjectContent: React.FC<ProjectContentProps> = ({
            if (statusText === 'OPEN') statusText = 'AKTIF';
            if (statusText === 'COMPLETED') statusText = 'SELESAI';
            
-           return (
+            return (
             <div 
               key={project.id || index} 
               onClick={() => onProjectClick(project.id, project.title)}
-              style={{ backgroundColor: colors.card, borderColor: colors.border }} 
-              className="rounded-3xl border relative overflow-hidden group hover:border-[#C69C3D]/50 transition-all duration-300 shadow-xl cursor-pointer active:scale-[0.98]"
+              className="group relative rounded-[2.5rem] p-[1.5px] overflow-hidden active:scale-[0.98] transition-all duration-300 shadow-2xl"
+              style={{ background: 'linear-gradient(145deg, rgba(198, 156, 61, 0.2), rgba(255, 255, 255, 0.05))' }}
             >
-              <div className={`absolute -right-16 -top-16 w-40 h-40 rounded-full blur-3xl opacity-10 pointer-events-none transition-colors duration-500 ${isDone ? 'bg-green-500' : 'bg-[#C69C3D]'}`}></div>
-
-              <div className="p-5">
-                <div className="flex justify-between items-start mb-6 relative z-10">
-                  <div className="flex gap-4 items-center flex-1 pr-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner shrink-0 transition-colors ${isDone ? 'bg-green-500/10 border-green-500/20' : 'bg-[#C69C3D]/10 border-[#C69C3D]/20 group-hover:bg-[#C69C3D]/20'}`}>
-                      {isDone ? <Activity className="w-6 h-6 text-green-400" /> : <Briefcase className="w-6 h-6 text-[#C69C3D]" />}
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-white text-base leading-tight group-hover:text-[#C69C3D] transition-colors">{project.title || `Project ${project.id}`}</h4>
-                      {project.company_name ? (
-                        <p className="text-[10px] text-neutral-400 mt-1 flex items-center gap-1">
-                          <User className="w-3 h-3 text-neutral-500" /> {project.company_name}
+              {/* Inner Card Side */}
+              <div className="bg-[#121212] rounded-[2.4rem] p-6 h-full relative overflow-hidden">
+                {/* Decorative Glow */}
+                <div className={`absolute -right-12 -top-12 w-32 h-32 rounded-full blur-3xl opacity-20 pointer-events-none transition-colors duration-500 ${isDone ? 'bg-green-500' : 'bg-[#C69C3D]'}`}></div>
+                
+                <div className="relative z-10">
+                  <div className="flex justify-between items-start gap-4 mb-6">
+                    <div className="flex gap-3 items-center min-w-0 flex-1">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-xl shrink-0 transition-transform group-hover:scale-110 duration-500 ${isDone ? 'bg-green-500/10 border-green-500/20' : 'bg-[#C69C3D]/10 border-[#C69C3D]/20 shadow-[#C69C3D]/5'}`}>
+                        {isDone ? <Activity className="w-6 h-6 text-green-400" /> : <Briefcase className="w-6 h-6 text-[#C69C3D]" />}
+                      </div>
+                      <div className="flex flex-col gap-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                           <h4 className="font-extrabold text-white text-base tracking-tight leading-none group-hover:text-[#C69C3D] transition-colors truncate">{project.title || `Project ${project.id}`}</h4>
+                           {project.userRole && (
+                             <span className={`text-[7px] px-1.5 py-0.5 rounded-lg font-black uppercase tracking-wider border shrink-0 ${
+                               project.userRole === 'PIC' 
+                                 ? 'bg-blue-500/20 text-blue-400 border-blue-500/30' 
+                                 : 'bg-white/5 text-neutral-500 border-white/5'
+                             }`}>
+                               {project.userRole}
+                             </span>
+                           )}
+                        </div>
+                        <p className="text-[10px] text-neutral-500 flex items-center gap-1 font-medium truncate">
+                          <User className="w-3 h-3 text-neutral-600 shrink-0" /> {project.company_name || 'Client Internal'}
                         </p>
-                      ) : (
-                        <p className="text-[10px] text-neutral-500 mt-1 uppercase tracking-widest">Internal Project</p>
-                      )}
+                      </div>
+                    </div>
+                    
+                    <span className={`text-[7px] px-2.5 py-1.5 rounded-xl font-black uppercase tracking-[0.1em] border shrink-0 backdrop-blur-sm ${isDone ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-[#C69C3D]/10 text-[#C69C3D] border-[#C69C3D]/20'}`}>
+                      {statusText}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-white/[0.03] p-3 rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
+                      <p className="text-[7px] text-neutral-500 uppercase tracking-widest mb-1.5 font-bold">Mulai Proyek</p>
+                      <div className="flex items-center gap-2">
+                         <Clock className="w-3 h-3 text-[#C69C3D]" />
+                         <p className="text-[11px] text-neutral-200 font-mono font-bold">{project.start_date || '-'}</p>
+                      </div>
+                    </div>
+                    <div className="bg-red-500/[0.03] p-3 rounded-2xl border border-red-500/10 group-hover:border-red-500/20 transition-colors">
+                      <p className="text-[7px] text-red-500/70 uppercase tracking-widest mb-1.5 font-bold">Batas Waktu</p>
+                      <div className="flex items-center gap-2">
+                         <Calendar className="w-3 h-3 text-red-500/80" />
+                         <p className="text-[11px] text-red-100/90 font-mono font-bold">{project.deadline || '-'}</p>
+                      </div>
                     </div>
                   </div>
                   
-                  <span className={`text-[9px] px-3 py-1.5 rounded-full font-bold uppercase tracking-widest border shrink-0 ${isDone ? 'bg-green-500/10 text-green-400 border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.2)]' : 'bg-[#C69C3D]/10 text-[#C69C3D] border-[#C69C3D]/20 shadow-[0_0_10px_rgba(212,175,55,0.1)]'}`}>
-                    {statusText}
-                  </span>
-                </div>
-                
-                <div className="flex gap-3 mb-5 relative z-10">
-                  {project.start_date && (
-                    <div className="bg-neutral-900/80 px-3 py-2 rounded-xl flex-1 border border-neutral-800/50 flex items-center gap-2.5">
-                      <Clock className="w-3.5 h-3.5 text-neutral-500" />
-                      <div>
-                        <p className="text-[8px] text-neutral-500 uppercase tracking-widest mb-0.5">Mulai</p>
-                        <p className="text-[10px] text-white font-medium">{project.start_date}</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-end">
+                      <p className="text-[9px] text-neutral-500 uppercase tracking-[0.2em] font-black">Progress Proyek</p>
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-xl font-black font-mono leading-none ${isDone ? 'text-green-500' : 'text-[#C69C3D]'}`}>{progress}</span>
+                        <span className="text-[10px] text-neutral-600 font-bold">%</span>
                       </div>
                     </div>
-                  )}
-                  {project.deadline && (
-                    <div className="bg-red-500/5 px-3 py-2 rounded-xl flex-1 border border-red-500/10 flex items-center gap-2.5">
-                      <Calendar className="w-3.5 h-3.5 text-red-500/80" />
-                      <div>
-                        <p className="text-[8px] text-red-500/80 uppercase tracking-widest mb-0.5">Deadline</p>
-                        <p className="text-[10px] text-red-100 font-medium">{project.deadline}</p>
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden p-[1.5px] border border-white/5">
+                      <div 
+                         style={{ width: `${progress}%` }} 
+                         className={`h-full rounded-full relative transition-all duration-1000 ease-out ${isDone ? 'bg-green-500' : 'bg-[#C69C3D] shadow-[0_0_15px_rgba(198,156,61,0.5)]'}`}
+                      >
+                         <div className="absolute inset-0 bg-white/20 animate-pulse transition-opacity opacity-50"></div>
                       </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="pt-4 border-t border-neutral-800/50 mt-2 relative z-10">
-                  <div className="flex justify-between items-end mb-2.5">
-                    <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-bold">
-                       Status Progress
-                    </span>
-                    <span style={{ color: isDone ? '#22c55e' : colors.gold }} className="text-base leading-none font-bold font-mono">
-                      {progress}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-neutral-900 h-2.5 rounded-full overflow-hidden shadow-inner relative border border-black backdrop-blur-sm">
-                    <div 
-                       style={{ 
-                         backgroundColor: isDone ? '#22c55e' : colors.gold, 
-                         width: `${progress}%` 
-                       }} 
-                       className="absolute top-0 left-0 bottom-0 transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(212,175,55,0.4)]"
-                    >
-                      <div className="absolute inset-0 bg-white/20 w-full animate-pulse"></div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-           );
+            );
         })
       ) : (
         <div className="flex flex-col items-center justify-center py-20 bg-[#2C2A29] rounded-3xl border border-neutral-800 border-dashed">

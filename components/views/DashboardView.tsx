@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bell, QrCode, ClipboardList, Users, DollarSign, Calendar } from 'lucide-react';
+import { Bell, QrCode, ClipboardList, Users, DollarSign, Calendar, Briefcase, Clock } from 'lucide-react';
 import { colors, getGreeting, getUserImage, getAttendanceStatus } from '@/lib/utils';
 
 interface DashboardViewProps {
@@ -70,10 +70,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ userData, currentT
         <div className="flex-1 pt-2 pb-6">
           <div className="grid grid-cols-2 gap-y-8 gap-x-6 h-full content-center">
             {[
+              { id: 'Project', label: 'Project', icon: Briefcase },
               { id: 'Semua Task', label: 'Task', icon: ClipboardList },
               { id: 'Tim', label: 'Tim', icon: Users },
               { id: 'Finance', label: 'Finance', icon: DollarSign },
-              { id: 'Jadwal', label: 'Jadwal', icon: Calendar }
+              { id: 'Jadwal', label: 'Jadwal', icon: Calendar },
+              { id: 'Absensi', label: 'Absensi', icon: Clock }
             ].map((item) => (
               <button key={item.id} onClick={() => onNav('subpage', null, item.id)} className="flex flex-col items-center gap-4 group active:scale-95 transition-transform w-full">
                 <div className="w-full aspect-square max-w-[120px] btn-3d flex items-center justify-center group-hover:border-[#C69C3D] group-active:border-[#C69C3D] transition-all duration-300">
