@@ -85,7 +85,11 @@ export const SubpageView: React.FC<SubpageViewProps> = (props) => {
           onCreateEvent={() => {}}
         />;
       case 'Tim': 
-        return <TimContent onNav={onNav} />;
+        return <TimContent 
+          onNav={onNav} 
+          attendances={props.attendances} 
+          isLoadingAttendances={props.isLoadingAttendances} 
+        />;
       case 'Absensi': 
         return <AbsensiContent 
           attendances={props.attendances} 

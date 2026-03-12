@@ -298,8 +298,8 @@ export default function HaviaMobileApp() {
       if (subpageTitle === 'Project') loadProjects();
       else if (subpageTitle === 'Semua Task') loadTasks();
       else if (subpageTitle === 'Finance') loadExpenses();
-      else if (subpageTitle === 'Jadwal') loadEvents();
-      else if (subpageTitle === 'Absensi') loadAttendances();
+      else if (subpageTitle === 'Jadwal') loadEvents(); 
+      else if (subpageTitle === 'Absensi' || subpageTitle === 'Tim') loadAttendances();
       else if (subpageTitle === 'Notifikasi') {
         const loadNotif = async () => {
           setIsLoadingNotif(true);
