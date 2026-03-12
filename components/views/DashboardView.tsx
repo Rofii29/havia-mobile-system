@@ -58,10 +58,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ userData, currentT
             <span className="text-[10px] text-neutral-500 font-medium">WIB / Western Indonesia</span>
           </div>
           <div className="text-right border-l border-white/5 pl-4">
-            <div className={`${getAttendanceStatus().color} text-[10px] font-bold uppercase tracking-widest mb-1`}>
-              {getAttendanceStatus().status}
-            </div>
-            <p className="text-[10px] text-neutral-500">Shift: 08:00 - 17:00</p>
+            <Clock className="w-6 h-6 text-neutral-600 mb-1" />
           </div>
         </div>
 
