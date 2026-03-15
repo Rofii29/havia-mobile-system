@@ -137,14 +137,16 @@ export const ProjectContent: React.FC<ProjectContentProps> = ({
                           {project.userRole && (
                               <span className={`text-[8px] px-2 py-0.8 rounded-lg font-black uppercase tracking-widest border shrink-0 ${
                                 project.userRole === 'PIC' 
-                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' 
+                                  ? 'bg-blue-500/10 text-blue-400 border-blue-500/20 shadow-[0_0_8px_rgba(59,130,246,0.1)]' 
                                   : project.userRole === 'KOLABORATOR'
                                     ? 'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                                    : project.userRole === 'ADMIN'
-                                      ? 'bg-red-500/10 text-red-400 border-red-500/20'
-                                      : 'bg-white/5 text-neutral-400/60 border-white/10'
+                                    : project.userRole === 'MEMBER' || project.userRole === 'TEAM MEMBER'
+                                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                      : project.userRole === 'ADMIN'
+                                        ? 'bg-red-500/10 text-red-400 border-red-500/20'
+                                        : 'bg-white/5 text-neutral-400/60 border-white/10'
                               }`}>
-                                {project.userRole === 'MEMBER' ? 'STAFF' : project.userRole}
+                                {project.userRole === 'MEMBER' ? 'TEAM MEMBER' : project.userRole}
                               </span>
                            )}
                            <span className={`text-[8px] px-2 py-0.8 rounded-lg font-black uppercase tracking-widest border-2 shrink-0 transition-colors duration-500 ${
