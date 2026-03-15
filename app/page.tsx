@@ -587,7 +587,7 @@ export default function HaviaMobileApp() {
         const res = await putToApi(`haviacms/attendance/${activeAttendance.id}`, apiToken, {
           out_time: formattedNow,
           status: 'pending',
-          note: activeAttendance.note ? `${activeAttendance.note} | Clock out via Mobile` : 'Clock out via Mobile'
+          note: 'Clock out via Mobile'
         });
 
         if (res.success) {
@@ -613,7 +613,7 @@ export default function HaviaMobileApp() {
         // --- CLOCK IN (Create new record via HaviaCMS) ---
         const res = await postToApi('haviacms/attendance', apiToken, {
           in_time: formattedNow,
-          note: 'Clock in via Mobile (HaviaCMS API)'
+          note: '' // Biarkan kosong agar di Brain tidak muncul teks otomatis
         });
 
         if (res.success) {

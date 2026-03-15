@@ -22,34 +22,40 @@ export const TimContent: React.FC<TimContentProps> = ({ onNav, attendances, isLo
       </div>
       
       {/* Quick Stats / Summary like Timecards in Brain */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-[#171717] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center shadow-lg">
-          <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest mb-1 text-center">Total Hari</span>
-          <span className="text-xl font-black text-white">{new Set(attendances.map(a => a.date || (a.in_time ? a.in_time.split(' ')[0] : null))).size}</span>
-        </div>
-        <div className="bg-[#171717] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center shadow-lg">
-          <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest mb-1 text-center">Total Jam</span>
-          <span className="text-xl font-black text-[#C69C3D]">
+      <div className="space-y-3">
+        {/* Full Width Total Jam */}
+        <div className="bg-[#171717] border border-neutral-800 rounded-3xl p-5 flex flex-col items-center justify-center shadow-lg">
+          <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1 text-center">Total Jam Kerja</span>
+          <span className="text-3xl font-black text-[#C69C3D] tabular-nums">
             {(() => {
-              let totalMinutes = 0;
-              // Ambil 20 record terakhir (atau semua jika kurang dari 20)
-              const recentRecords = attendances.slice(0, 20);
-              recentRecords.forEach(att => {
-                if (att.in_time && att.out_time && !att.out_time.startsWith('0000')) {
+              let totalMs = 0;
+              attendances.forEach(att => {
+                if (att.in_time && att.out_time && !att.out_time.startsWith('0000') && !att.out_time.startsWith('-0001')) {
                   const cin = new Date(att.in_time.replace(' ', 'T') + 'Z');
                   const cout = new Date(att.out_time.replace(' ', 'T') + 'Z');
                   if (!isNaN(cin.getTime()) && !isNaN(cout.getTime())) {
-                    totalMinutes += (cout.getTime() - cin.getTime()) / (1000 * 60);
+                    totalMs += (cout.getTime() - cin.getTime());
                   }
                 }
               });
-              return Math.floor(totalMinutes / 60) + ' J';
+              const hours = Math.floor(totalMs / (1000 * 60 * 60));
+              const minutes = Math.floor((totalMs / (1000 * 60)) % 60);
+              const seconds = Math.floor((totalMs / 1000) % 60);
+              return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
             })()}
           </span>
         </div>
-        <div className="bg-[#171717] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center shadow-lg">
-          <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest mb-1 text-center">Izin/Cuti</span>
-          <span className="text-xl font-black text-purple-400">{leaves.length}</span>
+
+        {/* Small Stats Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-[#171717] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center shadow-lg">
+            <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest mb-1 text-center">Total Hari</span>
+            <span className="text-xl font-black text-white">{new Set(attendances.map(a => a.date || (a.in_time ? a.in_time.split(' ')[0] : null))).size}</span>
+          </div>
+          <div className="bg-[#171717] border border-neutral-800 rounded-3xl p-4 flex flex-col items-center justify-center shadow-lg">
+            <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest mb-1 text-center">Izin / Cuti</span>
+            <span className="text-xl font-black text-purple-400">{leaves.length}</span>
+          </div>
         </div>
       </div>
 
@@ -99,10 +105,30 @@ export const TimContent: React.FC<TimContentProps> = ({ onNav, attendances, isLo
                const dateObj = new Date(att.in_time ? att.in_time.split(' ')[0] : (att.date || new Date()));
                const dayName = dateObj.toLocaleDateString('id-ID', { weekday: 'short' });
                const dayNum = dateObj.getDate();
+               
                const isOutTimeEmpty = !att.out_time || 
                                       att.out_time.startsWith('0000') || 
                                       att.out_time.startsWith('-0001');
                const isClockedIn = att.status === 'incomplete' || (att.status === 'pending' && outTimeLocal === null && isOutTimeEmpty);
+
+               // Calculate duration for the card
+               let durationText = "";
+               if (att.in_time && !isOutTimeEmpty) {
+                  const cin = new Date(att.in_time.replace(' ', 'T') + 'Z');
+                  const cout = new Date(att.out_time.replace(' ', 'T') + 'Z');
+                  const diffMs = cout.getTime() - cin.getTime();
+                  const totalSec = Math.floor(diffMs / 1000);
+                  
+                  if (totalSec < 60) {
+                    durationText = `${totalSec}d`; // detik
+                  } else if (totalSec < 3600) {
+                    durationText = `${Math.floor(totalSec / 60)}m`; // menit
+                  } else {
+                    const h = Math.floor(totalSec / 3600);
+                    const m = Math.floor((totalSec % 3600) / 60);
+                    durationText = `${h}j ${m}m`; // jam menit
+                  }
+               }
 
                return (
                  <div key={att.id || idx} className="flex items-center gap-4 group">
@@ -115,18 +141,23 @@ export const TimContent: React.FC<TimContentProps> = ({ onNav, attendances, isLo
                     {/* Timeline Line */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[11px] font-bold text-neutral-200">
-                          {isClockedIn ? 'Sedang Bekerja' : 'Selesai Kerja'}
-                        </span>
-                        <span className="text-[9px] font-bold text-neutral-500">
-                          {inTimeLocal || '--:--'} - {outTimeLocal || 'Present'}
+                        <div className="flex flex-col">
+                          <span className="text-[11px] font-bold text-neutral-200">
+                            {isClockedIn ? 'Sedang Bekerja' : 'Selesai Kerja'}
+                          </span>
+                          {!isClockedIn && durationText && (
+                            <span className="text-[8px] text-[#C69C3D] font-bold uppercase tracking-tighter">Durasi: {durationText}</span>
+                          )}
+                        </div>
+                        <span className="text-[9px] font-bold text-neutral-500 tabular-nums">
+                          {inTimeLocal || '--:--'} - {outTimeLocal || 'Bekerja'}
                         </span>
                       </div>
                       
                       {/* Duration Bar Mock */}
                       <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                         <div 
-                          className={`h-full rounded-full ${isClockedIn ? 'bg-[#C69C3D] animate-pulse' : 'bg-green-500/50'}`} 
+                          className={`h-full rounded-full ${isClockedIn ? 'bg-[#C69C3D] animate-pulse' : 'bg-green-500/30'}`} 
                           style={{ width: isClockedIn ? '100%' : '100%' }}
                         ></div>
                       </div>
