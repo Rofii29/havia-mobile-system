@@ -10,7 +10,7 @@ interface IDViewProps {
 export const IDView: React.FC<IDViewProps> = ({ userData, onNav }) => {
   return (
     <section className="h-full w-full flex flex-col relative z-40 animate-in slide-in-from-right-4 duration-300">
-      <div className="px-6 py-6 flex items-center relative border-b border-white/5">
+      <div style={{ backgroundColor: `${colors.bg}FA` }} className="px-6 py-6 flex items-center relative border-b border-neutral-200/50 backdrop-blur-md">
         <button onClick={() => onNav('dashboard')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-10 h-10 rounded-full border flex items-center justify-center hover:bg-neutral-100 transition-colors z-20">
           <ArrowLeft className="w-5 h-5 text-neutral-900" />
         </button>
@@ -24,18 +24,19 @@ export const IDView: React.FC<IDViewProps> = ({ userData, onNav }) => {
       </div>
 
       <div className="flex-1 flex items-center justify-center px-8 pb-20">
-        <div className="w-full bg-white rounded-[2.5rem] p-8 border border-neutral-200 relative overflow-hidden shadow-xl">
-          <div className="absolute -right-8 -bottom-12 text-[180px] font-serif font-bold text-neutral-100 pointer-events-none select-none leading-none">H</div>
-
+        <div style={{ backgroundColor: colors.cream }} className="w-full rounded-[2.5rem] p-8 border border-neutral-200 relative overflow-hidden shadow-xl">
+          <div className="absolute -right-8 -bottom-12 text-[180px] font-display font-bold text-neutral-900/[0.03] pointer-events-none select-none leading-none">H</div>
+  
           <div className="flex justify-between items-start mb-10 relative z-10">
             <div className="flex flex-col">
-              <h3 className="font-bold text-lg text-neutral-900 tracking-[0.2em] uppercase flex items-center leading-none">
-                HA<span style={{ color: colors.gold }}>V</span>IA
+              <h3 className="font-bold text-lg text-dark tracking-[0.2em] uppercase flex items-center leading-none">
+                HA<span className="text-gold">V</span>IA
               </h3>
-              <span className="text-[8px] text-neutral-400 uppercase tracking-[0.3em] mt-1 font-medium">Studio</span>
+              <span className="text-[8px] text-neutral-500 uppercase tracking-[0.3em] mt-1 font-medium">Studio</span>
             </div>
             <div className="w-2 h-2 bg-green-500 rounded-full shadow-[0_0_10px_rgba(34,197,94,0.4)]"></div>
           </div>
+
 
           <div className="flex flex-col items-center mb-10 relative z-10">
             <div className="relative w-36 h-36 mb-6">
@@ -54,7 +55,7 @@ export const IDView: React.FC<IDViewProps> = ({ userData, onNav }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 border-t border-neutral-100 pt-6 relative z-10">
+          <div className="grid grid-cols-2 gap-4 border-t border-neutral-200 pt-6 relative z-10">
             <div>
               <p className="text-[9px] text-neutral-400 uppercase tracking-widest mb-1">ID Number</p>
               <p className="text-sm font-mono text-neutral-900 tracking-wider">HAV-882910</p>

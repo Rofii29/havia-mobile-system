@@ -67,13 +67,13 @@ export const TaskList: React.FC<{
             key={f.id}
             onClick={() => setActiveFilter(f.id)}
             style={{ 
-              backgroundColor: activeFilter === f.id ? `${colors.gold}20` : 'transparent',
-              borderColor: activeFilter === f.id ? colors.gold : 'rgba(255,255,255,0.05)'
+              backgroundColor: activeFilter === f.id ? `${colors.gold}15` : 'transparent',
+              borderColor: activeFilter === f.id ? colors.gold : '#E5E5E5'
             }}
             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-300 whitespace-nowrap group active:scale-95`}
           >
-            <f.icon className={`w-3.5 h-3.5 ${activeFilter === f.id ? 'text-[#C69C3D]' : 'text-neutral-400 group-hover:text-neutral-600'}`} />
-            <span className={`text-[10px] font-bold tracking-widest ${activeFilter === f.id ? 'text-neutral-900' : 'text-neutral-400 group-hover:text-neutral-600'}`}>
+            <f.icon className={`w-3.5 h-3.5 ${activeFilter === f.id ? 'text-[#C69C3D]' : 'text-neutral-500 group-hover:text-black'}`} />
+            <span className={`text-[10px] font-bold tracking-widest ${activeFilter === f.id ? 'text-neutral-900' : 'text-neutral-500 group-hover:text-black'}`}>
               {f.label}
             </span>
           </button>
@@ -102,8 +102,8 @@ export const TaskList: React.FC<{
             
             return (
               <div key={task.id || index} 
-                className="p-px rounded-[2rem] overflow-hidden shadow-2xl active:scale-[0.98] transition-all duration-300"
-                style={{ background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent)' }}
+                className="p-0.5 rounded-[2rem] overflow-hidden shadow-xl active:scale-[0.98] transition-all duration-300"
+                style={{ background: 'linear-gradient(145deg, #F0F0F0, transparent)' }}
               >
                 <div className="bg-white p-6 rounded-[1.95rem] relative overflow-hidden group border border-neutral-100 shadow-sm transition-all group-active:shadow-none">
                    {/* Glow effect on hover */}
@@ -115,8 +115,8 @@ export const TaskList: React.FC<{
                       isDone 
                         ? 'bg-green-500/10 border-green-500/20 text-green-400' 
                         : isInProgress 
-                          ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
-                          : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+                          ? 'bg-blue-500/10 border-blue-500/20 text-blue-600 shadow-[0_0_15px_rgba(59,130,246,0.1)]'
+                          : 'bg-neutral-100 border-neutral-200 text-neutral-400'
                     }`}>
                       {isDone ? <CheckCircle2 className="w-6 h-6" /> : <ClipboardList className="w-6 h-6" />}
                     </div>
@@ -172,17 +172,17 @@ export const TaskList: React.FC<{
                       </div>
 
                       {/* Visual Timeline Bar (Centered between dates) */}
-                      <div className="flex-1 flex items-center gap-1.5 px-2 opacity-40">
-                        <div className="w-1.5 h-1.5 rounded-full bg-neutral-600"></div>
-                        <div className="flex-1 h-px border-t-[1.5px] border-dashed border-neutral-700"></div>
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500/50"></div>
+                      <div className="flex-1 flex items-center gap-1.5 px-2 opacity-60">
+                        <div className="w-1.5 h-1.5 rounded-full bg-neutral-200"></div>
+                        <div className="flex-1 h-px border-t-[1.5px] border-dashed border-neutral-100"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-400/50"></div>
                       </div>
 
                       <div className="space-y-1 text-right flex-shrink-0">
-                        <p className="text-[8px] text-red-500/40 uppercase tracking-[0.2em] font-black">Deadline</p>
+                        <p className="text-[8px] text-red-500 uppercase tracking-[0.2em] font-black">Deadline</p>
                         <div className="flex items-center gap-1.5 justify-end">
-                          <Clock className="w-3 h-3 text-red-500/40" />
-                          <p className="text-[10px] text-red-200/80 font-bold tracking-tight whitespace-nowrap">{formatDate(task.deadline)}</p>
+                          <Clock className="w-3 h-3 text-red-400" />
+                          <p className="text-[10px] text-neutral-900 font-bold tracking-tight whitespace-nowrap">{formatDate(task.deadline)}</p>
                         </div>
                       </div>
                     </div>

@@ -1,12 +1,16 @@
 export const colors = {
   gold: '#C69C3D',
   darkGold: '#b59020',
-  bg: '#FAFAFA',
+  bg: '#FFFFFF',
+  dark: '#2C2A29',
+  cream: '#FAF7EF',
   card: '#FFFFFF',
   border: '#E5E5E5',
   textMuted: '#737373',
   redAccent: '#F43F5E'
 };
+
+
 
 export const getUserImage = (user: any) => {
   if (!user) return "https://ui-avatars.com/api/?name=User&background=D4AF37&color=111";

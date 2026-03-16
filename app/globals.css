@@ -1,21 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --background: #FAFAFA;
-  --foreground: #111111;
+  --background: #FFFFFF;
+  --foreground: #2C2A29;
+  --havia-gold: #C69C3D;
+  --havia-dark: #2C2A29;
+  --havia-cream: #FAF7EF;
+  --havia-off-white: #F8F9FA;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-gold: var(--havia-gold);
+  --color-dark: var(--havia-dark);
+  --color-cream: var(--havia-cream);
+  --color-off-white: var(--havia-off-white);
   --font-sans: "Open Sans", sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --font-display: "Helvetica", "Helvetica Neue", Arial, sans-serif;
 }
+
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "Open Sans", sans-serif;
+  font-family: var(--font-sans);
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -27,14 +36,15 @@ body {
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* Custom gradients */
-.gold-gradient { background: linear-gradient(135deg, #C69C3D 0%, #a88434 100%); }
-.black-card-gradient { background: linear-gradient(135deg, #FFFFFF 0%, #F5F5F5 100%); }
+.gold-gradient { background: linear-gradient(135deg, var(--havia-gold) 0%, #a88434 100%); }
+.dark-card-gradient { background: linear-gradient(135deg, var(--havia-dark) 0%, #1a1918 100%); }
+.cream-card-gradient { background: linear-gradient(135deg, var(--havia-cream) 0%, #e8dec2 100%); }
 
 /* 3D Button Effects */
 .btn-3d {
-  background: linear-gradient(145deg, #FFFFFF 0%, #F0F0F0 100%);
-  box-shadow: 5px 5px 10px #D1D1D1, -5px -5px 10px #FFFFFF, inset 1px 1px 2px rgba(0,0,0,0.02);
-  border: 1px solid #E5E5E5;
+  background: linear-gradient(145deg, #FFFFFF 0%, #F5F5F3 100%);
+  box-shadow: 4px 4px 12px rgba(0,0,0,0.08), -4px -4px 12px #FFFFFF;
+  border: 1px solid #D4D4D4;
   border-radius: 28px;
 }
 .btn-3d-hover {
@@ -86,5 +96,6 @@ body {
 
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-family: var(--font-display);
+  color: var(--havia-dark);
 }

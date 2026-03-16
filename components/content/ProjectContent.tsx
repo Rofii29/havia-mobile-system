@@ -59,13 +59,13 @@ export const ProjectContent: React.FC<ProjectContentProps> = ({
               key={f.id}
               onClick={() => setActiveFilter(f.id)}
               style={{ 
-                backgroundColor: activeFilter === f.id ? `${colors.gold}20` : 'transparent',
-                borderColor: activeFilter === f.id ? colors.gold : 'rgba(255,255,255,0.05)'
+                backgroundColor: activeFilter === f.id ? `${colors.gold}15` : 'transparent',
+                borderColor: activeFilter === f.id ? colors.gold : '#E5E5E5'
               }}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl border transition-all duration-300 whitespace-nowrap group active:scale-95`}
             >
-              <f.icon className={`w-3.5 h-3.5 ${activeFilter === f.id ? 'text-[#C69C3D]' : 'text-neutral-400 group-hover:text-neutral-600'}`} />
-              <span className={`text-[10px] font-bold tracking-widest ${activeFilter === f.id ? 'text-neutral-900' : 'text-neutral-400 group-hover:text-neutral-600'}`}>
+              <f.icon className={`w-3.5 h-3.5 ${activeFilter === f.id ? 'text-[#C69C3D]' : 'text-neutral-500 group-hover:text-black'}`} />
+              <span className={`text-[10px] font-bold tracking-widest ${activeFilter === f.id ? 'text-neutral-900' : 'text-neutral-500 group-hover:text-black'}`}>
                 {f.label}
               </span>
             </button>
@@ -99,8 +99,8 @@ export const ProjectContent: React.FC<ProjectContentProps> = ({
              <div 
                key={project.id || index} 
                onClick={() => onProjectClick(project.id, project.title)}
-               className="group relative rounded-[2rem] p-px overflow-hidden active:scale-[0.98] transition-all duration-300 shadow-2xl mb-4"
-               style={{ background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent)' }}
+               className="group relative rounded-[2rem] p-0.5 overflow-hidden active:scale-[0.98] transition-all duration-300 shadow-xl mb-4"
+               style={{ background: 'linear-gradient(145deg, #F0F0F0, transparent)' }}
              >
                <div className="bg-white rounded-[1.95rem] p-6 h-full relative overflow-hidden border border-neutral-100 shadow-xl">
                  {/* Glow effect on hover */}
@@ -127,8 +127,8 @@ export const ProjectContent: React.FC<ProjectContentProps> = ({
                           {project.title || `Project ${project.id}`}
                         </h4>
                         <div className="flex items-center gap-2 mt-2">
-                           <p className="text-[10px] text-neutral-400 flex items-center gap-1.5 font-medium truncate max-w-[120px]">
-                             <User className="w-2.5 h-2.5 text-neutral-500 shrink-0" /> {project.company_name || 'Client Internal'}
+                           <p className="text-[11px] text-neutral-600 flex items-center gap-1.5 font-bold tracking-tight truncate max-w-[180px]">
+                             <User className="w-3 h-3 text-[#C69C3D] shrink-0" /> {project.company_name || 'Client Internal'}
                            </p>
                         </div>
                         
@@ -176,17 +176,19 @@ export const ProjectContent: React.FC<ProjectContentProps> = ({
                     </div>
 
                     {/* Visual Timeline Bar (Centered between dates) */}
-                    <div className="flex-1 flex items-center gap-1.5 px-2 opacity-40">
-                      <div className="w-1.5 h-1.5 rounded-full bg-neutral-300"></div>
-                      <div className="flex-1 h-px border-t-[1.5px] border-dashed border-neutral-200"></div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-rose-500/50"></div>
+                    <div className="flex-1 flex items-center gap-1.5 px-2 opacity-80">
+                      <div className="w-1.5 h-1.5 rounded-full bg-black"></div>
+                      <div className="flex-1 h-px border-t-[1.5px] border-dashed border-black"></div>
+                      <div className="w-1 h-1 rounded-full bg-black/40"></div>
+                      <div className="flex-1 h-px border-t-[1.5px] border-dashed border-black"></div>
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-500/80"></div>
                     </div>
 
                     <div className="space-y-1 text-right flex-shrink-0">
-                      <p className="text-[8px] text-rose-500/40 uppercase tracking-[0.2em] font-black">Deadline</p>
+                      <p className="text-[8px] text-red-500 uppercase tracking-[0.2em] font-black">Deadline</p>
                       <div className="flex items-center gap-1.5 justify-end">
-                        <Clock className="w-3 h-3 text-rose-500/40" />
-                        <p className="text-[10px] text-rose-600 font-bold tracking-tight whitespace-nowrap">{formatDate(project.deadline)}</p>
+                        <Clock className="w-3 h-3 text-red-400" />
+                        <p className="text-[10px] text-neutral-900 font-bold tracking-tight whitespace-nowrap">{formatDate(project.deadline)}</p>
                       </div>
                     </div>
                   </div>

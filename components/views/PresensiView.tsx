@@ -62,10 +62,10 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
   return (
     <section className="h-full w-full flex flex-col relative z-40 animate-in slide-in-from-bottom-4 duration-300 overflow-hidden">
       <div className="px-6 py-6 flex items-center justify-between z-20">
-        <button onClick={() => onNav('dashboard')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-10 h-10 rounded-full border flex items-center justify-center hover:bg-neutral-100 transition-colors shadow-lg">
+        <button onClick={() => onNav('dashboard')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-10 h-10 rounded-full border-2 flex items-center justify-center hover:bg-neutral-100 transition-colors shadow-md">
           <ArrowLeft className="w-5 h-5 text-neutral-900" />
         </button>
-        <h2 className="font-bold text-sm uppercase tracking-widest text-neutral-900">Employee Attendance</h2>
+        <h2 className="font-bold text-sm uppercase tracking-widest text-neutral-900">Attendance</h2>
         <div className="w-10"></div>
       </div>
 
@@ -94,7 +94,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
           }} 
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
-          className="rounded-t-[2.5rem] p-8 pb-12 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] border-t border-[#C69C3D]/20 relative transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)"
+          className="rounded-t-[2.5rem] p-8 pb-12 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] border-t border-neutral-200 relative transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)"
         >
           {/* Handle bar */}
           <div 
@@ -111,7 +111,7 @@ export const PresensiView: React.FC<PresensiViewProps> = ({
             </div>
           </div>
 
-          <div style={{ backgroundColor: isClockedIn ? '#F43F5E15' : 'rgba(34, 197, 94, 0.05)', borderColor: isClockedIn ? '#F43F5E30' : 'rgba(34, 197, 94, 0.2)' }} className="w-full p-4 rounded-2xl border flex items-center justify-between mb-2 shadow-lg">
+          <div style={{ backgroundColor: isClockedIn ? '#F43F5E08' : 'rgba(34, 197, 94, 0.05)', borderColor: isClockedIn ? '#F43F5E40' : 'rgba(34, 197, 94, 0.3)' }} className="w-full p-4 rounded-2xl border-2 flex items-center justify-between mb-2 shadow-sm">
             <div className="flex items-center gap-4">
                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${isClockedIn ? 'bg-rose-500 shadow-rose-500/30' : 'bg-green-500 shadow-green-500/30'}`}>
                  <Clock className="w-6 h-6 text-white" />

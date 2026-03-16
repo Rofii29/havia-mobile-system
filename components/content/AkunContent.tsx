@@ -23,9 +23,9 @@ export const AkunContent: React.FC<AkunContentProps> = ({
       </div>
       <h2 className="text-2xl font-bold text-neutral-900 tracking-wide">{userData?.first_name} {userData?.last_name || ''}</h2>
       <span style={{ color: colors.gold }} className="text-[10px] font-bold uppercase tracking-[0.2em] mt-1">{userData?.job_title || 'USER'}</span>
-      <div className="mt-4 px-4 py-1.5 bg-neutral-100 border border-neutral-200 rounded-full flex items-center gap-2">
-        <Mail className="w-3 h-3 text-neutral-500" />
-        <span className="text-xs text-neutral-500">{userData?.email || 'email@haviastudio.com'}</span>
+      <div className="mt-4 px-4 py-1.5 bg-neutral-100 border border-neutral-300/50 rounded-full flex items-center gap-2">
+        <Mail className="w-3 h-3 text-neutral-600" />
+        <span className="text-xs text-neutral-600 font-medium">{userData?.email || 'email@haviastudio.com'}</span>
       </div>
     </div>
 
@@ -33,31 +33,31 @@ export const AkunContent: React.FC<AkunContentProps> = ({
 
     {/* Account Settings Section */}
     <div className="space-y-3 pt-6">
-      <p className="text-[10px] uppercase tracking-widest text-neutral-400 font-bold mb-3 pl-1">Account Settings</p>
+      <p className="text-[10px] uppercase tracking-widest text-neutral-500 font-black mb-3 pl-1">Account Settings</p>
       
       {/* Edit Profile Button */}
-      <button onClick={onEditProfile} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-full text-left flex items-center justify-between p-4 rounded-2xl border active:scale-[0.98] transition-all group hover:border-[#C69C3D]/50">
+      <button onClick={onEditProfile} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-full text-left flex items-center justify-between p-4 rounded-2xl border-2 active:scale-[0.98] transition-all group hover:border-[#C69C3D]">
         <div className="flex items-center gap-4">
-          <div className="bg-neutral-100 p-3 rounded-xl group-hover:bg-[#C69C3D]/10 transition-colors">
-            <User className="w-5 h-5 text-neutral-400 group-hover:text-[#C69C3D] transition-colors" />
+          <div className="bg-neutral-100 p-3 rounded-xl group-hover:bg-[#C69C3D]/10 transition-colors border border-neutral-200">
+            <User className="w-5 h-5 text-neutral-500 group-hover:text-[#C69C3D] transition-colors" />
           </div>
           <div>
             <h4 className="font-bold text-neutral-900 text-sm">Edit Profile</h4>
-            <p className="text-[10px] text-neutral-400 tracking-wider">Update your personal information</p>
+            <p className="text-[10px] text-neutral-500 font-medium tracking-wider">Update your personal information</p>
           </div>
         </div>
         <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-[#C69C3D] transition-colors" />
       </button>
 
       {/* Reset Password Button */}
-      <button onClick={() => onNav('subpage', null, 'Reset Password')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-full text-left flex items-center justify-between p-4 rounded-2xl border active:scale-[0.98] transition-all group hover:border-[#C69C3D]/50 mt-3">
+      <button onClick={() => onNav('subpage', null, 'Reset Password')} style={{ backgroundColor: colors.card, borderColor: colors.border }} className="w-full text-left flex items-center justify-between p-4 rounded-2xl border-2 active:scale-[0.98] transition-all group hover:border-[#C69C3D] mt-3">
         <div className="flex items-center gap-4">
-          <div className="bg-neutral-100 p-3 rounded-xl group-hover:bg-[#C69C3D]/10 transition-colors">
-            <Lock className="w-5 h-5 text-neutral-400 group-hover:text-[#C69C3D] transition-colors" />
+          <div className="bg-neutral-100 p-3 rounded-xl group-hover:bg-[#C69C3D]/10 transition-colors border border-neutral-200">
+            <Lock className="w-5 h-5 text-neutral-500 group-hover:text-[#C69C3D] transition-colors" />
           </div>
           <div>
             <h4 className="font-bold text-neutral-900 text-sm">Reset Password</h4>
-            <p className="text-[10px] text-neutral-400 tracking-wider">Change your security password</p>
+            <p className="text-[10px] text-neutral-500 font-medium tracking-wider">Change your security password</p>
           </div>
         </div>
         <ChevronRight className="w-5 h-5 text-neutral-400 group-hover:text-[#C69C3D] transition-colors" />

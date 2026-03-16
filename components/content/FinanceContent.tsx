@@ -27,7 +27,7 @@ export const FinanceContent: React.FC<FinanceContentProps> = ({ expenses, isLoad
             <div className="w-8 h-8 rounded-lg bg-rose-50 flex items-center justify-center">
               <TrendingDown className="w-4 h-4 text-rose-600" />
             </div>
-            <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-bold">Total Expense</span>
+            <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">Total Expense</span>
           </div>
           <p className="text-lg font-bold text-rose-600 font-mono tracking-tight">{formatCurrency(totalExpense)}</p>
         </div>
@@ -38,7 +38,7 @@ export const FinanceContent: React.FC<FinanceContentProps> = ({ expenses, isLoad
             <div className="w-8 h-8 rounded-lg bg-[#C69C3D]/5 flex items-center justify-center">
               <Receipt className="w-4 h-4 text-[#C69C3D]" />
             </div>
-            <span className="text-[9px] text-neutral-400 uppercase tracking-widest font-bold">Count</span>
+            <span className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold">Count</span>
           </div>
           <p className="text-lg font-bold text-[#C69C3D] font-mono tracking-tight">{expenses.length} <span className="text-xs font-normal text-neutral-400">items</span></p>
         </div>
@@ -46,12 +46,12 @@ export const FinanceContent: React.FC<FinanceContentProps> = ({ expenses, isLoad
 
       <div className="rounded-2xl border border-neutral-100 p-4 flex items-center justify-between" style={{ backgroundColor: colors.card }}>
         <div className="flex-1 text-center">
-          <p className="text-[9px] text-neutral-400 uppercase tracking-widest font-bold mb-1">Subtotal</p>
+          <p className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Subtotal</p>
           <p className="text-sm font-bold text-neutral-900 font-mono">{formatCurrency(totalAmount)}</p>
         </div>
         <div className="w-px h-10 bg-neutral-100"></div>
         <div className="flex-1 text-center">
-          <p className="text-[9px] text-neutral-400 uppercase tracking-widest font-bold mb-1">Tax</p>
+          <p className="text-[9px] text-neutral-500 uppercase tracking-widest font-bold mb-1">Tax</p>
           <p className="text-sm font-bold text-amber-600 font-mono">{formatCurrency(totalTax)}</p>
         </div>
       </div>
@@ -106,7 +106,7 @@ export const FinanceContent: React.FC<FinanceContentProps> = ({ expenses, isLoad
                       <Tag className="w-3 h-3" /> {category}
                     </span>
                     {expense.project_title && (
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-bold uppercase tracking-widest text-blue-400">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-500/10 border border-blue-500/20 rounded-lg text-[9px] font-bold uppercase tracking-widest text-blue-600">
                         <Briefcase className="w-3 h-3" /> {expense.project_title}
                       </span>
                     )}

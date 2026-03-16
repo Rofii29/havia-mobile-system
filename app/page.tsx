@@ -690,8 +690,9 @@ export default function HaviaMobileApp() {
   }
 
   return (
-    <div style={{ backgroundColor: colors.bg, fontFamily: '"Open Sans", sans-serif' }} 
-      className="text-white h-screen w-full overflow-hidden relative selection:bg-[#C69C3D] selection:text-black">
+    <div style={{ backgroundColor: colors.bg, fontFamily: 'var(--font-sans)' }} 
+      className="text-dark h-screen w-full overflow-hidden relative selection:bg-gold selection:text-black">
+
 
       <Toast msg={toastMsg} />
 
