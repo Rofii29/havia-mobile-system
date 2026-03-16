@@ -6,10 +6,13 @@ interface ProjectContentProps {
   isLoadingProjects: boolean;
   projects: any[];
   onProjectClick: (id: string, name: string) => void;
+  paginationMeta?: any;
+  onPageChange?: (page: number) => void;
+  onFilterChange?: (status: string) => void;
 }
 
- export const ProjectContent: React.FC<ProjectContentProps> = ({
-  isLoadingProjects, projects, onProjectClick
+  export const ProjectContent: React.FC<ProjectContentProps> = ({
+  isLoadingProjects, projects, onProjectClick, paginationMeta, onPageChange, onFilterChange
 }) => {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -36,21 +39,8 @@ interface ProjectContentProps {
     return 'OPEN'; // Fallback for active projects
   };
 
-  const filteredProjects = projects.filter(project => {
-    if (activeFilter === 'ALL') return true;
-    return getProjectCategory(project) === activeFilter;
-  }).sort((a, b) => {
-    if (activeFilter !== 'ALL') return 0;
-    
-    const categoryToPriority: Record<string, number> = {
-      'OPEN': 1,
-      'HOLD': 2,
-      'CANCELED': 3,
-      'COMPLETED': 4
-    };
-    
-    return (categoryToPriority[getProjectCategory(a)] || 5) - (categoryToPriority[getProjectCategory(b)] || 5);
-  });
+  // Sorting is now handled by the backend for better performance
+  const projectList = projects;
 
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
 
@@ -60,9 +50,9 @@ interface ProjectContentProps {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-32">
-      {/* Filter Dropdown */}
-      {!isLoadingProjects && projects.length > 0 && (
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 pb-2">
+      {/* Filter Dropdown - Always show if not loading so user can change filter even if list is empty */}
+      {!isLoadingProjects && (
         <div className="px-1 relative z-50">
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -91,6 +81,7 @@ interface ProjectContentProps {
                     onClick={() => {
                       setActiveFilter(f.id);
                       setIsDropdownOpen(false);
+                      if (onFilterChange) onFilterChange(f.id);
                     }}
                     className={`flex items-center gap-4 w-full px-5 py-4 rounded-2xl transition-all ${
                       activeFilter === f.id 
@@ -128,8 +119,8 @@ interface ProjectContentProps {
            </div>
            <p className="text-[10px] text-[#C69C3D] uppercase tracking-[0.3em] font-black">Syncing Workspace...</p>
         </div>
-      ) : filteredProjects.length > 0 ? (
-        filteredProjects.map((project: any, index: number) => {
+      ) : projectList.length > 0 ? (
+        projectList.map((project: any, index: number) => {
             const totalPoints = parseFloat(project.total_points || "0");
             const completedPoints = parseFloat(project.completed_points || "0");
             const progress = project.progress ? parseInt(project.progress, 10) : (totalPoints > 0 ? Math.round((completedPoints / totalPoints) * 100) : 0);
@@ -286,6 +277,67 @@ interface ProjectContentProps {
             No projects with status <br/>
             <span style={{ color: colors.gold }}>{activeFilter}</span>
           </p>
+        </div>
+      )}
+      
+      {/* Pagination UI - MINIMALIST CARD THEME */}
+      {!isLoadingProjects && paginationMeta && paginationMeta.total_pages > 1 && (
+        <div className="flex flex-col items-center gap-4 mt-4 pb-0 px-4">
+          {/* Main Pagination Bar */}
+          <div className="flex items-center justify-between w-full max-w-[280px] p-1.5 bg-white rounded-2xl border border-[#E8E4E1] shadow-sm">
+            <button 
+              disabled={paginationMeta.current_page <= 1}
+              onClick={() => onPageChange?.(paginationMeta.current_page - 1)}
+              className="px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 disabled:opacity-20 bg-[#2C2A29]/5 text-[#2C2A29]"
+            >
+              Prev
+            </button>
+
+            <div className="flex items-center gap-1">
+              {Array.from({ length: paginationMeta.total_pages }, (_, i) => i + 1).map((p) => {
+                const current = paginationMeta.current_page;
+                const total = paginationMeta.total_pages;
+                
+                if (p === 1 || p === total || (p >= current - 1 && p <= current + 1)) {
+                   return (
+                    <button
+                      key={p}
+                      onClick={() => onPageChange?.(p)}
+                      className={`w-8 h-8 rounded-lg font-black text-[11px] transition-all duration-300 flex items-center justify-center ${
+                        current === p 
+                          ? 'bg-[#C69C3D] text-white shadow-sm' 
+                          : 'bg-transparent text-[#6B6865]/60 hover:text-[#282524] hover:bg-[#2C2A29]/5'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  );
+                } else if (p === current - 2 || p === current + 2) {
+                  return <span key={p} className="text-[#6B6865]/20 text-[9px]">..</span>;
+                }
+                return null;
+              })}
+            </div>
+
+            <button 
+              disabled={!paginationMeta.has_more}
+              onClick={() => onPageChange?.(paginationMeta.current_page + 1)}
+              className="px-4 py-2 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all active:scale-95 disabled:opacity-20 bg-[#2C2A29]/5 text-[#2C2A29]"
+            >
+              Next
+            </button>
+          </div>
+          
+          {/* Subtle Metadata */}
+          <div className="flex items-center gap-3 opacity-40">
+             <span className="text-[9px] text-[#6B6865] font-black uppercase tracking-widest">
+               Page {paginationMeta.current_page} / {paginationMeta.total_pages}
+             </span>
+             <div className="h-1 w-1 rounded-full bg-neutral-300"></div>
+             <span className="text-[9px] text-[#6B6865] font-black uppercase tracking-widest">
+               {paginationMeta.total_records} Projects
+             </span>
+          </div>
         </div>
       )}
       </div>
