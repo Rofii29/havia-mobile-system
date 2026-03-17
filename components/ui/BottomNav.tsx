@@ -10,7 +10,7 @@ interface BottomNavProps {
 export const BottomNav: React.FC<BottomNavProps> = ({ activeNav, onNav }) => {
   return (
     <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.9)', borderColor: 'rgba(198, 156, 61, 0.1)' }} 
-      className="fixed bottom-6 left-6 right-6 h-16 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between px-6 border animate-in slide-in-from-bottom-8">
+      className="fixed bottom-6 left-6 right-6 h-16 backdrop-blur-xl rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.05)] z-50 flex items-center justify-around px-10 border animate-in slide-in-from-bottom-8">
       
       <button onClick={() => onNav('dashboard', 'home')} className={`flex flex-col items-center transition-colors p-2 ${activeNav === 'home' ? 'text-gold' : 'text-neutral-400 hover:text-dark'}`}>
         <Home className="w-7 h-7" strokeWidth={activeNav === 'home' ? 2.5 : 1.5} />
