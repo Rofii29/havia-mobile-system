@@ -66,6 +66,7 @@ interface SubpageViewProps {
   taskPaginationMeta?: any;
   onTaskPageChange?: (page: number) => void;
   onTaskFilterChange?: (status: string) => void;
+  activeTaskId?: string | null;
 }
 
 export const SubpageView: React.FC<SubpageViewProps> = (props) => {
@@ -90,6 +91,7 @@ export const SubpageView: React.FC<SubpageViewProps> = (props) => {
           paginationMeta={props.taskPaginationMeta}
           onPageChange={props.onTaskPageChange}
           onFilterChange={props.onTaskFilterChange}
+          highlightTaskId={props.activeTaskId}
         />;
       case 'Tasks': 
         return <TaskList 
@@ -99,6 +101,7 @@ export const SubpageView: React.FC<SubpageViewProps> = (props) => {
           paginationMeta={props.taskPaginationMeta}
           onPageChange={props.onTaskPageChange}
           onFilterChange={props.onTaskFilterChange}
+          highlightTaskId={props.activeTaskId}
         />;
       case 'Finance': 
         return <FinanceContent 
@@ -163,6 +166,8 @@ export const SubpageView: React.FC<SubpageViewProps> = (props) => {
         return <NotifikasiContent 
           isLoadingNotif={props.isLoadingNotif} 
           notifications={props.notifications} 
+          onProjectClick={props.onProjectClick}
+          onNav={props.onNav}
         />;
       case 'Reset Password':
         return <ResetPasswordContent 

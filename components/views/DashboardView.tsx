@@ -7,9 +7,10 @@ interface DashboardViewProps {
   currentTime: string;
   onNav: (view: string, nav?: string | null, title?: string) => void;
   activeAttendance?: any;
+  notifications?: any[];
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ userData, currentTime, onNav, activeAttendance }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ userData, currentTime, onNav, activeAttendance, notifications }) => {
   return (
     <section className="h-full w-full flex flex-col relative overflow-y-auto scrollbar-hide pb-28 animate-in fade-in duration-300">
       {/* Header with Logo */}
@@ -24,7 +25,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ userData, currentT
         </div>
         <button onClick={() => onNav('subpage', null, 'Notifications')} style={{ backgroundColor: colors.card }} className="w-10 h-10 rounded-full border border-[#E8E4E1] flex items-center justify-center relative hover:bg-neutral-50 active:scale-95 transition-all">
           <Bell className="w-5 h-5 text-[#6B6865]" />
-          <span style={{ backgroundColor: colors.gold }} className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full ring-2 ring-white"></span>
+          {notifications && notifications.length > 0 && (
+            <span style={{ backgroundColor: colors.gold }} className="absolute -top-1 -right-1 w-5 h-5 rounded-full ring-2 ring-white flex items-center justify-center text-[10px] font-black text-white">
+              {notifications.length > 9 ? '9+' : notifications.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -87,35 +92,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ userData, currentT
 
         {/* Quick Access Menu - 5 Columns with Abstract 3D Icons & Transparency Fix */}
         <div className="pt-2 pb-6 px-1">
-          <p className="text-[10px] text-[#6B6865] uppercase tracking-[0.3em] font-black mb-6 px-1 opacity-60">Quick Access</p>
+          <p className="text-[10px] text-neutral-900 uppercase tracking-[0.3em] font-black mb-6 px-1">Quick Access</p>
           <div className="grid grid-cols-5 gap-3 h-24">
             {[
-              { id: 'All Tasks', label: 'Tasks', img: '/images/3d/task.png' },
-              { id: 'Project', label: 'Projects', img: '/images/3d/project.png', nav: 'project' },
-              { id: 'Schedule', label: 'Events', img: '/images/3d/calendar.png', nav: 'jadwal' },
-              { id: 'Team', label: 'Team', img: '/images/3d/team.png' },
-              { id: 'Finance', label: 'Finance', img: '/images/3d/finance.png' }
+              { id: 'All Tasks', label: 'Tasks', icon: ClipboardList },
+              { id: 'Project', label: 'Projects', icon: Briefcase, nav: 'project' },
+              { id: 'Schedule', label: 'Events', icon: Calendar, nav: 'jadwal' },
+              { id: 'Team', label: 'Team', icon: Users },
+              { id: 'Finance', label: 'Finance', icon: DollarSign }
             ].map((item) => (
               <button 
                 key={item.id} 
                 onClick={() => onNav('subpage', item.nav || null, item.id)} 
-                className="flex flex-col items-center gap-3 group active:scale-95 transition-all duration-300 w-full"
+                className="flex flex-col items-center gap-3 active:scale-95 transition-all duration-300 w-full"
               >
                 <div 
-                   className="w-full aspect-square rounded-[1.8rem] border border-[#E8E4E1] flex items-center justify-center relative transition-all duration-500 hover:border-[#C69C3D]/40 hover:shadow-[0_10px_20px_-5px_rgba(0,0,0,0.05)] bg-transparent overflow-hidden"
+                   className="w-full aspect-square rounded-[1.8rem] border border-[#E8E4E1] flex items-center justify-center relative bg-white overflow-hidden shadow-sm"
                 >
-                  {/* mixBlendMode: multiply effectively removes the white background of the image on the dashboard color */}
-                  <img 
-                    src={item.img} 
-                    className="w-[95%] h-[95%] object-contain transition-all duration-500 relative z-10" 
-                    style={{ mixBlendMode: 'multiply' }}
-                    alt={item.label} 
-                  />
-                  
-                  {/* Background Glass Shine on Hover */}
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white to-[#F4EBD4]/20 opacity-50"></div>
+                  <item.icon className="w-6 h-6 text-[#C69C3D] relative z-10" />
                 </div>
-                <span className="text-[8px] font-black tracking-tight text-[#6B6865] group-hover:text-[#2C2A29] transition-colors uppercase truncate w-full text-center">{item.label}</span>
+                <span className="text-[8px] font-black tracking-widest text-neutral-900 uppercase truncate w-full text-center">{item.label}</span>
               </button>
             ))}
           </div>

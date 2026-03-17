@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClipboardList, Briefcase, Activity, Filter, CheckCircle2, Clock, PlayCircle, ChevronDown } from 'lucide-react';
 import { colors, formatDate } from '@/lib/utils';
 
@@ -11,10 +11,17 @@ export const TaskList: React.FC<{
   paginationMeta?: any;
   onPageChange?: (page: number) => void;
   onFilterChange?: (status: string) => void;
-}> = ({ tasks, isLoading, projects, projectName, paginationMeta, onPageChange, onFilterChange }) => {
+  highlightTaskId?: string | null;
+}> = ({ tasks, isLoading, projects, projectName, paginationMeta, onPageChange, onFilterChange, highlightTaskId }) => {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (highlightTaskId) {
+      setExpandedTaskId(highlightTaskId);
+    }
+  }, [highlightTaskId]);
 
   const filters = [
     { id: 'ALL', label: 'ALL', icon: Filter },
@@ -106,8 +113,8 @@ export const TaskList: React.FC<{
           const statusStr = String(task.status_title || task.status || '').toUpperCase();
           const isDone = statusStr === 'DONE' || statusStr === 'COMPLETED';
           const isInProgress = statusStr === 'IN PROGRESS' || statusStr === 'ACTIVE';
-          const taskId = task.id || String(index);
-          const isExpanded = expandedTaskId === taskId;
+          const taskId = String(task.id || index);
+          const isExpanded = String(expandedTaskId) === taskId;
           
           const proj = projects?.find(p => String(p.id) === String(task.project_id));
           const projName = projectName || (proj ? proj.title : `Project ${task.project_id}`);

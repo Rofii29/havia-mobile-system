@@ -60,6 +60,7 @@ export default function HaviaMobileApp() {
   const [taskPaginationMeta, setTaskPaginationMeta] = useState<any>(null);
   const [currentTaskPage, setCurrentTaskPage] = useState(1);
   const [currentTaskFilter, setCurrentTaskFilter] = useState('ALL');
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   // Edit Profile States
   const [editForm, setEditForm] = useState<any>({});
@@ -116,7 +117,7 @@ export default function HaviaMobileApp() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  const handleNav = (view: string, nav?: string | null, title: string = '') => {
+  const handleNav = (view: string, nav?: string | null, title: string = '', taskId: string | null = null) => {
     // SECURITY GUARD: Check status on every navigation if logged in
     if (apiToken && view !== 'login') {
       verifyUserStatus(apiToken).then(statusCheck => {
@@ -136,6 +137,7 @@ export default function HaviaMobileApp() {
     
     if (title) {
       setSubpageTitle(title);
+      setActiveTaskId(taskId);
       
       // Reset projects pagination & filter when entering the main project list
       if (title === 'Project') {
@@ -493,7 +495,7 @@ export default function HaviaMobileApp() {
       else if (subpageTitle === 'Notifications') {
         const loadNotif = async () => {
           setIsLoadingNotif(true);
-          const res = await fetchFromApi('notifications', apiToken);
+          const res = await fetchFromApi('haviacms/notifications', apiToken);
           if (res.success) setNotifications(Array.isArray(res.data) ? res.data : []);
           setIsLoadingNotif(false);
         };
@@ -502,11 +504,29 @@ export default function HaviaMobileApp() {
     }
   }, [subpageTitle, currentView, apiToken]);
 
-  const handleProjectClick = (id: string, name: string) => {
+  const loadNotifications = async () => {
+    if (!apiToken) return;
+    const res = await fetchFromApi('haviacms/notifications', apiToken);
+    if (res.success) {
+      setNotifications(Array.isArray(res.data) ? res.data : []);
+    }
+  };
+
+  // Periodic Refresh
+  useEffect(() => {
+    if (apiToken && userData) {
+      loadNotifications();
+      // Refresh every 5 minutes
+      const interval = setInterval(loadNotifications, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [apiToken, userData]);
+
+  const handleProjectClick = (id: string, name: string, taskId: string | null = null) => {
     setActiveProjectId(id);
     setActiveProjectName(name);
     loadTasks(id);
-    handleNav('subpage', null, 'Tasks');
+    handleNav('subpage', null, 'Tasks', taskId);
   };
 
   const handleSaveProfile = async () => {
@@ -736,6 +756,7 @@ export default function HaviaMobileApp() {
           currentTime={currentTime} 
           onNav={handleNav} 
           activeAttendance={activeAttendance} 
+          notifications={notifications}
         />
       )}
 
@@ -763,9 +784,16 @@ export default function HaviaMobileApp() {
           projectTasks={projectTasks}
           isLoadingTasks={isLoadingTasks}
           taskPaginationMeta={taskPaginationMeta}
-          onTaskPageChange={(p: number) => loadTasks(activeProjectId, currentTaskFilter, p)}
-          onTaskFilterChange={(s: string) => loadTasks(activeProjectId, s, 1)}
+          onTaskPageChange={(p: number) => {
+            setActiveTaskId(null);
+            loadTasks(activeProjectId, currentTaskFilter, p);
+          }}
+          onTaskFilterChange={(s: string) => {
+            setActiveTaskId(null);
+            loadTasks(activeProjectId, s, 1);
+          }}
           activeProjectName={activeProjectName}
+          activeTaskId={activeTaskId}
           onProjectClick={handleProjectClick}
           projectPaginationMeta={projectPaginationMeta}
           onProjectPageChange={(p: number) => loadProjects(currentProjectFilter, p)}
