@@ -49,11 +49,18 @@ export default function HaviaMobileApp() {
   
   const [projects, setProjects] = useState<any[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
+  const [projectPaginationMeta, setProjectPaginationMeta] = useState<any>(null);
+  const [currentProjectPage, setCurrentProjectPage] = useState(1);
+  const [currentProjectFilter, setCurrentProjectFilter] = useState('ALL');
   
   const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
   const [activeProjectName, setActiveProjectName] = useState<string>('');
   const [projectTasks, setProjectTasks] = useState<any[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [taskPaginationMeta, setTaskPaginationMeta] = useState<any>(null);
+  const [currentTaskPage, setCurrentTaskPage] = useState(1);
+  const [currentTaskFilter, setCurrentTaskFilter] = useState('ALL');
+  const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
 
   // Edit Profile States
   const [editForm, setEditForm] = useState<any>({});
@@ -100,7 +107,7 @@ export default function HaviaMobileApp() {
   useEffect(() => {
     const timer = setInterval(() => {
       const now = new Date();
-      setCurrentTime(now.toLocaleTimeString('id-ID', { hour12: false }));
+      setCurrentTime(now.toLocaleTimeString('en-US', { hour12: false }));
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -110,12 +117,12 @@ export default function HaviaMobileApp() {
     setTimeout(() => setToastMsg(''), 3000);
   };
 
-  const handleNav = (view: string, nav?: string | null, title: string = '') => {
+  const handleNav = (view: string, nav?: string | null, title: string = '', taskId: string | null = null) => {
     // SECURITY GUARD: Check status on every navigation if logged in
     if (apiToken && view !== 'login') {
       verifyUserStatus(apiToken).then(statusCheck => {
         if (!statusCheck.success && statusCheck.status === 'blocked') {
-          showToast(statusCheck.message || 'Akun dinonaktifkan');
+          showToast(statusCheck.message || 'Account disabled');
           handleLogout();
         }
       });
@@ -130,6 +137,18 @@ export default function HaviaMobileApp() {
     
     if (title) {
       setSubpageTitle(title);
+      setActiveTaskId(taskId);
+      
+      // Reset projects pagination & filter when entering the main project list
+      if (title === 'Project') {
+        setCurrentProjectFilter('ALL');
+        setCurrentProjectPage(1);
+      }
+      if (title === 'All Tasks' || title === 'Tasks') {
+        setCurrentTaskFilter('ALL');
+        setCurrentTaskPage(1);
+      }
+
       // Pre-fill edit form when entering Edit Profile
       if (title === 'Edit Profile' && userData) {
         setEditForm({
@@ -178,7 +197,7 @@ export default function HaviaMobileApp() {
                 // Verify status in background to catch "Disable login" or "Inactive"
                 verifyUserStatus(savedToken).then(statusCheck => {
                   if (!statusCheck.success && statusCheck.status === 'blocked') {
-                    showToast(statusCheck.message || 'Akun dinonaktifkan');
+                    showToast(statusCheck.message || 'Account disabled');
                     handleLogout();
                   }
                 });
@@ -215,7 +234,7 @@ export default function HaviaMobileApp() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginEmail || !loginPassword) {
-      showToast('Email dan Password wajib diisi.');
+      showToast('Email and Password are required.');
       return;
     }
     setIsLoading(true);
@@ -228,12 +247,12 @@ export default function HaviaMobileApp() {
         localStorage.setItem('havia_token', res.token || '');
         setCurrentView('dashboard');
         setActiveNav('home');
-        showToast('Selamat Datang!');
+        showToast('Welcome!');
       } else {
-        showToast(res.error || 'Login Gagal. Cek kembali akun Anda.');
+        showToast(res.error || 'Login Failed. Please check your credentials.');
       }
     } catch (error: any) {
-      showToast(error.message || 'Terjadi kesalahan koneksi.');
+      showToast(error.message || 'Connection error occurred.');
     } finally {
       setIsLoading(false);
     }
@@ -245,59 +264,64 @@ export default function HaviaMobileApp() {
     setUserData(null);
     setApiToken('');
     handleNav('login');
-    showToast('Berhasil Logout');
+    showToast('Logout Success');
   };
 
   // --- DATA FETCHING ---
-  const loadProjects = async () => {
+  const loadProjects = async (status: string = 'ALL', page: number = 1) => {
     if (!userData?.id || !apiToken) return;
     setIsLoadingProjects(true);
+    setCurrentProjectFilter(status);
+    setCurrentProjectPage(page);
     
-    console.log(`[LoadProjects] Using HaviaCMS Bridge for user ${userData.id}...`);
+    console.log(`[LoadProjects] status=${status}, page=${page}`);
 
-    // Ambil data proyek melalui Bridge HaviaCMS yang sudah menangani Kolaborator secara otomatis
-    const pRes = await fetchFromApi('haviacms/projects', apiToken);
-    const tRes = await fetchFromApi('haviacms/tasks', apiToken);
+    const endpoint = `haviacms/projects?status=${status}&page=${page}`;
+    const res = await fetchFromApi(endpoint, apiToken);
 
-    if (pRes.success) {
-      const projectPool = Array.isArray(pRes.data) ? pRes.data : [];
-      const taskPool = Array.isArray(tRes.data) ? tRes.data : [];
+    if (res.success) {
+      const projectPool = Array.isArray(res.data) ? res.data : [];
       
-      const myId = String(userData.id);
       const isAdmin = String(userData.is_admin) === "1" || userData.role_id === "admin";
+      const myId = String(userData.id);
 
       const enriched = projectPool.map((p: any) => {
-        const myId = String(userData.id);
-        
-        // Priority 1: Direct Project Assignment (from Brain CRM)
+        // Priority logic for roles
         const isProjectPic = String(p.assigned_to) === myId;
         const pCollabs = p.collaborators ? String(p.collaborators).split(',').map((id: string) => id.trim()) : [];
         const isProjectCollab = pCollabs.includes(myId);
 
         if (isAdmin) p.userRole = 'ADMIN';
-        else if (isProjectPic) p.userRole = 'PIC'; // Full Project PIC
-        else if (isProjectCollab) p.userRole = 'KOLABORATOR'; // Full Project Collab
-        else p.userRole = 'TEAM MEMBER'; // Default Project Role
+        else if (isProjectPic) p.userRole = 'PIC';
+        else if (isProjectCollab) p.userRole = 'KOLABORATOR';
+        else p.userRole = 'TEAM MEMBER';
 
         return p;
       });
 
       setProjects(enriched);
+      if (res.meta) {
+        setProjectPaginationMeta(res.meta);
+      }
     } else {
-      showToast(`Gagal memuat proyek: ${pRes.error}`);
+      showToast(`Failed to load projects: ${res.error}`);
     }
     
     setIsLoadingProjects(false);
   };
 
-  const loadTasks = async (projectId: string | null = null) => {
+  const loadTasks = async (projectId: string | null = null, status: string = 'ALL', page: number = 1) => {
     if (!userData?.id || !apiToken) return;
     setIsLoadingTasks(true);
+    setCurrentTaskFilter(status);
+    setCurrentTaskPage(page);
     
     const myId = String(userData.id);
-    console.log(`[LoadTasks] Using HaviaCMS Bridge for tasks...`);
+    console.log(`[LoadTasks] status=${status}, page=${page}, project=${projectId}`);
 
-    const endpoint = projectId ? `haviacms/tasks?project_id=${projectId}` : 'haviacms/tasks';
+    let endpoint = `haviacms/tasks?status=${status}&page=${page}`;
+    if (projectId) endpoint += `&project_id=${projectId}`;
+    
     const res = await fetchFromApi(endpoint, apiToken);
 
     if (res.success) {
@@ -308,13 +332,17 @@ export default function HaviaMobileApp() {
         const isCollab = collabs.includes(myId);
         
         if (isPic) t.userRole = 'PIC';
-        else if (isCollab) t.userRole = 'KOLABORATOR';
+        else if (isCollab) t.userRole = 'COLLABORATOR';
+        else t.userRole = 'TEAM MEMBER';
         
         return t;
       });
       setProjectTasks(enrichedTasks);
+      if (res.meta) {
+        setTaskPaginationMeta(res.meta);
+      }
     } else {
-      showToast(`Gagal memuat tugas: ${res.error}`);
+      showToast(`Failed to load tasks: ${res.error}`);
     }
     setIsLoadingTasks(false);
   };
@@ -350,13 +378,13 @@ export default function HaviaMobileApp() {
           isFallback: true
         }));
         const serverError = (res as any).serverErrorMessage;
-        showToast(serverError ? `Server Error: ${serverError}` : 'Info: Menampilkan data simulasi karena server sedang kendala.');
+        showToast(serverError ? `Server Error: ${serverError}` : 'Info: Displaying simulation data due to server issues.');
       }
 
       setEvents(eventsData);
     } else {
       setEvents([]);
-      if (res.error) showToast(`Gagal sinkron jadwal: ${res.error}`);
+      if (res.error) showToast(`Failed to sync schedule: ${res.error}`);
     }
     setIsLoadingEvents(false);
   };
@@ -390,11 +418,11 @@ export default function HaviaMobileApp() {
     setIsSubmittingLeave(true);
     const res = await postToApi('haviacms/leaves', apiToken, data);
     if (res.success) {
-      showToast("Pengajuan berhasil dikirim!");
+      showToast("Submission sent successfully!");
       setIsLeaveModalOpen(false);
       loadLeaves();
     } else {
-      showToast(`Gagal: ${(res as any).message || (res as any).error}`);
+      showToast(`Failed: ${(res as any).message || (res as any).error}`);
     }
     setIsSubmittingLeave(false);
   };
@@ -450,24 +478,24 @@ export default function HaviaMobileApp() {
     }
 
     if (currentView === 'subpage' && apiToken) {
-      if (subpageTitle === 'Project') loadProjects();
-      else if (subpageTitle === 'Semua Task') loadTasks();
+      if (subpageTitle === 'Project') loadProjects(currentProjectFilter, currentProjectPage);
+      else if (subpageTitle === 'All Tasks') loadTasks();
       else if (subpageTitle === 'Finance') loadExpenses();
-      else if (subpageTitle === 'Jadwal') {
+      else if (subpageTitle === 'Schedule') {
         loadEvents();
         loadEventLabels();
       }
-      else if (subpageTitle === 'Absensi') {
+      else if (subpageTitle === 'Attendance') {
         loadAttendances();
-      } else if (subpageTitle === 'Tim') {
+      } else if (subpageTitle === 'Team') {
         loadAttendances();
         loadLeaves();
         loadLeaveTypes();
       }
-      else if (subpageTitle === 'Notifikasi') {
+      else if (subpageTitle === 'Notifications') {
         const loadNotif = async () => {
           setIsLoadingNotif(true);
-          const res = await fetchFromApi('notifications', apiToken);
+          const res = await fetchFromApi('haviacms/notifications', apiToken);
           if (res.success) setNotifications(Array.isArray(res.data) ? res.data : []);
           setIsLoadingNotif(false);
         };
@@ -476,11 +504,29 @@ export default function HaviaMobileApp() {
     }
   }, [subpageTitle, currentView, apiToken]);
 
-  const handleProjectClick = (id: string, name: string) => {
+  const loadNotifications = async () => {
+    if (!apiToken) return;
+    const res = await fetchFromApi('haviacms/notifications', apiToken);
+    if (res.success) {
+      setNotifications(Array.isArray(res.data) ? res.data : []);
+    }
+  };
+
+  // Periodic Refresh
+  useEffect(() => {
+    if (apiToken && userData) {
+      loadNotifications();
+      // Refresh every 5 minutes
+      const interval = setInterval(loadNotifications, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [apiToken, userData]);
+
+  const handleProjectClick = (id: string, name: string, taskId: string | null = null) => {
     setActiveProjectId(id);
     setActiveProjectName(name);
     loadTasks(id);
-    handleNav('subpage', null, 'Tasks');
+    handleNav('subpage', null, 'Tasks', taskId);
   };
 
   const handleSaveProfile = async () => {
@@ -495,10 +541,10 @@ export default function HaviaMobileApp() {
         const updatedUser = { ...userData, ...editForm };
         setUserData(updatedUser);
         localStorage.setItem('havia_user', JSON.stringify(updatedUser));
-        showToast('Profil berhasil diperbarui! ✅');
-        handleNav('subpage', null, 'Akun');
-      } else { showToast(res.error || 'Gagal memperbarui profil.'); }
-    } catch (error: any) { showToast(error.message || 'Terjadi kesalahan.'); }
+        showToast('Profile updated successfully! ✅');
+        handleNav('subpage', null, 'Account');
+      } else { showToast(res.error || 'Failed to update profile.'); }
+    } catch (error: any) { showToast(error.message || 'An error occurred.'); }
     finally { setIsSavingProfile(false); }
   };
 
@@ -515,12 +561,12 @@ export default function HaviaMobileApp() {
         const updatedUser = { ...userData, image: res.image };
         setUserData(updatedUser);
         localStorage.setItem('havia_user', JSON.stringify(updatedUser));
-        showToast('Berhasil Update Profile');
+        showToast('Profile updated successfully');
       } else {
-        showToast(res.error || 'Gagal mengunggah foto.');
+        showToast(res.error || 'Failed to upload photo.');
       }
     } catch (error: any) {
-      showToast(error.message || 'Terjadi kesalahan koneksi.');
+      showToast(error.message || 'Connection error occurred.');
     } finally {
       setIsUploadingImage(false);
     }
@@ -534,12 +580,12 @@ export default function HaviaMobileApp() {
         const updatedUser = { ...userData, image: "" };
         setUserData(updatedUser);
         localStorage.setItem('havia_user', JSON.stringify(updatedUser));
-        showToast('Berhasil Update Profile');
+        showToast('Profile updated successfully');
       } else {
-        showToast(res.error || 'Gagal menghapus foto.');
+        showToast(res.error || 'Failed to delete photo.');
       }
     } catch (error: any) {
-      showToast(error.message || 'Terjadi kesalahan koneksi.');
+      showToast(error.message || 'Connection error occurred.');
     } finally {
       setIsDeletingImage(false);
     }
@@ -554,9 +600,9 @@ export default function HaviaMobileApp() {
     try {
       const res = await postToApi('events', apiToken, newEvent);
       if (res.success) {
-        showToast('Event berhasil dibuat! 📅');
+        showToast('Event created successfully! 📅');
         loadEvents();
-        handleNav('subpage', null, 'Jadwal');
+        handleNav('subpage', null, 'Schedule');
         setNewEvent({
           title: '',
           start_date: new Date().toISOString().split('T')[0],
@@ -565,8 +611,8 @@ export default function HaviaMobileApp() {
           location: '',
           color: '#C69C3D'
         });
-      } else { showToast(res.error || 'Gagal menyimpan event.'); }
-    } catch (e: any) { showToast(e.message || 'Error koneksi.'); }
+      } else { showToast(res.error || 'Failed to save event.'); }
+    } catch (e: any) { showToast(e.message || 'Connection error.'); }
     finally { setIsSavingEvent(false); }
   };
 
@@ -577,11 +623,11 @@ export default function HaviaMobileApp() {
     setIsSubmittingAttendance(true);
     const res = await deleteFromApi(`haviacms/attendance/${activeAttendance.id}`, apiToken);
     if (res.success) {
-      showToast('Sesi absen berhasil direset! 🧹');
+      showToast('Attendance session reset successfully! 🧹');
       setActiveAttendance(null);
       loadAttendances();
     } else {
-      showToast(res.error || 'Gagal mereset sesi.');
+      showToast(res.error || 'Failed to reset session.');
     }
     setIsSubmittingAttendance(false);
   };
@@ -600,14 +646,14 @@ export default function HaviaMobileApp() {
                        activeAttendance.out_time?.startsWith('-0001');
 
         if (isJunk) {
-          showToast('Data rusak terdeteksi, membersihkan Brain... 🧹');
+          showToast('Corrupted data detected, cleaning Brain... 🧹');
           const delRes = await deleteFromApi(`attendance/${activeAttendance.id}`, apiToken);
           if (delRes.success) {
             setActiveAttendance(null);
             loadAttendances();
-            showToast('Havia Brain Bersih! Silahkan Clock In ulang. ✨');
+            showToast('Havia Brain Cleaned! Please Clock In again. ✨');
           } else {
-            showToast('Gagal membersihkan data rusak.');
+            showToast('Failed to clean corrupted data.');
           }
           return; // Stop di sini agar user bisa klik Clock In lagi setelah bersih
         }
@@ -620,10 +666,10 @@ export default function HaviaMobileApp() {
         });
 
         if (res.success) {
-          showToast('Clock Out Berhasil! Sampai jumpa besok. 👋');
+          showToast('Clock Out Success! See you tomorrow. 👋');
           loadAttendances();
         } else {
-          showToast(res.error || 'Gagal Clock Out.');
+          showToast(res.error || 'Failed to Clock Out.');
         }
       } else {
         // --- AUTO-HEAL: Hapus record 'sampah' jika ada (Record dengan Out Time -0001 atau 0000) ---
@@ -659,10 +705,10 @@ export default function HaviaMobileApp() {
           };
           setActiveAttendance(mockActive);
 
-          showToast('Clock In Berhasil! 🚀');
+          showToast('Clock In Success! 🚀');
           loadAttendances();
         } else {
-          showToast(res.error || 'Gagal Clock In.');
+          showToast(res.error || 'Failed to Clock In.');
         }
       }
     } catch (e: any) {
@@ -682,7 +728,7 @@ export default function HaviaMobileApp() {
   // --- RENDER ---
   if (isCheckingAuth) {
     return (
-      <div style={{ backgroundColor: colors.bg }} className="h-screen w-full flex flex-col items-center justify-center">
+      <div style={{ backgroundColor: colors.primary }} className="h-screen w-full flex flex-col items-center justify-center">
         <div className="w-16 h-16 rounded-full border-t-2 border-[#C69C3D] animate-spin mb-4"></div>
         <p className="text-[#C69C3D] text-[10px] font-bold uppercase tracking-widest animate-pulse">Autentikasi Havia...</p>
       </div>
@@ -690,8 +736,9 @@ export default function HaviaMobileApp() {
   }
 
   return (
-    <div style={{ backgroundColor: colors.bg, fontFamily: '"Open Sans", sans-serif' }} 
-      className="text-white h-screen w-full overflow-hidden relative selection:bg-[#C69C3D] selection:text-black">
+    <div style={{ backgroundColor: colors.primary, fontFamily: 'var(--font-sans)' }} 
+      className="text-dark h-screen w-full overflow-hidden relative selection:bg-gold selection:text-black">
+
 
       <Toast msg={toastMsg} />
 
@@ -709,6 +756,7 @@ export default function HaviaMobileApp() {
           currentTime={currentTime} 
           onNav={handleNav} 
           activeAttendance={activeAttendance} 
+          notifications={notifications}
         />
       )}
 
@@ -735,7 +783,21 @@ export default function HaviaMobileApp() {
           isLoadingProjects={isLoadingProjects}
           projectTasks={projectTasks}
           isLoadingTasks={isLoadingTasks}
+          taskPaginationMeta={taskPaginationMeta}
+          onTaskPageChange={(p: number) => {
+            setActiveTaskId(null);
+            loadTasks(activeProjectId, currentTaskFilter, p);
+          }}
+          onTaskFilterChange={(s: string) => {
+            setActiveTaskId(null);
+            loadTasks(activeProjectId, s, 1);
+          }}
           activeProjectName={activeProjectName}
+          activeTaskId={activeTaskId}
+          onProjectClick={handleProjectClick}
+          projectPaginationMeta={projectPaginationMeta}
+          onProjectPageChange={(p: number) => loadProjects(currentProjectFilter, p)}
+          onProjectFilterChange={(s: string) => loadProjects(s, 1)}
           expenses={expenses}
           isLoadingExpenses={isLoadingExpenses}
           events={events}
@@ -759,7 +821,6 @@ export default function HaviaMobileApp() {
           setNewEvent={setNewEvent}
           handleCreateEvent={handleCreateEvent}
           isSavingEvent={isSavingEvent}
-          onProjectClick={handleProjectClick}
           apiToken={apiToken}
           onUploadImage={handleUploadImage}
           isUploadingImage={isUploadingImage}

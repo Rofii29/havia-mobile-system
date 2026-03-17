@@ -1,12 +1,15 @@
 export const colors = {
-  gold: '#C69C3D',
-  darkGold: '#b59020',
-  bg: '#0a0a0a',
-  card: '#171717',
-  border: '#262626',
-  textMuted: '#a3a3a3',
-  redAccent: '#F43F5E'
+  primary: '#F2F1F0', // Global Background
+  gold: '#C69C3D',    // Secondary Brand
+  dark: '#2C2A29',    // Secondary Text/Elements
+  cream: '#F4EBD4',   // Third Color (Accents)
+  card: '#FFFFFF',
+  border: '#E8E4E1',
+  textMuted: '#6B6865',
+  redAccent: '#E04F3F'
 };
+
+
 
 export const getUserImage = (user: any) => {
   if (!user) return "https://ui-avatars.com/api/?name=User&background=D4AF37&color=111";
@@ -29,7 +32,7 @@ export const getUserImage = (user: any) => {
 export const formatCurrency = (amount: string | number) => {
   const num = typeof amount === 'string' ? parseFloat(amount) : amount;
   if (isNaN(num)) return 'Rp0';
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
@@ -42,7 +45,7 @@ export const formatDate = (dateStr: string) => {
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
-    return d.toLocaleDateString('id-ID', { 
+    return d.toLocaleDateString('en-US', { 
       day: 'numeric', 
       month: 'short', 
       year: 'numeric' 
@@ -52,10 +55,10 @@ export const formatDate = (dateStr: string) => {
 
 export const getGreeting = () => {
   const hour = new Date().getHours();
-  if (hour < 10) return "Selamat Pagi";
-  if (hour < 15) return "Selamat Siang";
-  if (hour < 18) return "Selamat Sore";
-  return "Selamat Malam";
+  if (hour < 10) return "Good Morning";
+  if (hour < 15) return "Good Afternoon";
+  if (hour < 18) return "Good Evening";
+  return "Good Night";
 };
 
 export const getAttendanceStatus = () => {
