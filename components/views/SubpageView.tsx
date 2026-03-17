@@ -63,6 +63,9 @@ interface SubpageViewProps {
   eventFilterLabel: string;
   setEventFilterLabel: (v: string) => void;
   onOpenLeaveModal?: (type: 'izin' | 'cuti') => void;
+  taskPaginationMeta?: any;
+  onTaskPageChange?: (page: number) => void;
+  onTaskFilterChange?: (status: string) => void;
 }
 
 export const SubpageView: React.FC<SubpageViewProps> = (props) => {
@@ -84,12 +87,18 @@ export const SubpageView: React.FC<SubpageViewProps> = (props) => {
           tasks={props.projectTasks} 
           isLoading={props.isLoadingTasks} 
           projects={props.projects} 
+          paginationMeta={props.taskPaginationMeta}
+          onPageChange={props.onTaskPageChange}
+          onFilterChange={props.onTaskFilterChange}
         />;
       case 'Tasks': 
         return <TaskList 
           tasks={props.projectTasks} 
           isLoading={props.isLoadingTasks} 
           projectName={props.activeProjectName} 
+          paginationMeta={props.taskPaginationMeta}
+          onPageChange={props.onTaskPageChange}
+          onFilterChange={props.onTaskFilterChange}
         />;
       case 'Finance': 
         return <FinanceContent 

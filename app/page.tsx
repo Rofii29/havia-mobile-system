@@ -57,6 +57,9 @@ export default function HaviaMobileApp() {
   const [activeProjectName, setActiveProjectName] = useState<string>('');
   const [projectTasks, setProjectTasks] = useState<any[]>([]);
   const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+  const [taskPaginationMeta, setTaskPaginationMeta] = useState<any>(null);
+  const [currentTaskPage, setCurrentTaskPage] = useState(1);
+  const [currentTaskFilter, setCurrentTaskFilter] = useState('ALL');
 
   // Edit Profile States
   const [editForm, setEditForm] = useState<any>({});
@@ -138,6 +141,10 @@ export default function HaviaMobileApp() {
       if (title === 'Project') {
         setCurrentProjectFilter('ALL');
         setCurrentProjectPage(1);
+      }
+      if (title === 'All Tasks' || title === 'Tasks') {
+        setCurrentTaskFilter('ALL');
+        setCurrentTaskPage(1);
       }
 
       // Pre-fill edit form when entering Edit Profile
@@ -301,14 +308,18 @@ export default function HaviaMobileApp() {
     setIsLoadingProjects(false);
   };
 
-  const loadTasks = async (projectId: string | null = null) => {
+  const loadTasks = async (projectId: string | null = null, status: string = 'ALL', page: number = 1) => {
     if (!userData?.id || !apiToken) return;
     setIsLoadingTasks(true);
+    setCurrentTaskFilter(status);
+    setCurrentTaskPage(page);
     
     const myId = String(userData.id);
-    console.log(`[LoadTasks] Using HaviaCMS Bridge for tasks...`);
+    console.log(`[LoadTasks] status=${status}, page=${page}, project=${projectId}`);
 
-    const endpoint = projectId ? `haviacms/tasks?project_id=${projectId}` : 'haviacms/tasks';
+    let endpoint = `haviacms/tasks?status=${status}&page=${page}`;
+    if (projectId) endpoint += `&project_id=${projectId}`;
+    
     const res = await fetchFromApi(endpoint, apiToken);
 
     if (res.success) {
@@ -319,11 +330,15 @@ export default function HaviaMobileApp() {
         const isCollab = collabs.includes(myId);
         
         if (isPic) t.userRole = 'PIC';
-        else if (isCollab) t.userRole = 'KOLABORATOR';
+        else if (isCollab) t.userRole = 'COLLABORATOR';
+        else t.userRole = 'TEAM MEMBER';
         
         return t;
       });
       setProjectTasks(enrichedTasks);
+      if (res.meta) {
+        setTaskPaginationMeta(res.meta);
+      }
     } else {
       showToast(`Failed to load tasks: ${res.error}`);
     }
@@ -747,6 +762,9 @@ export default function HaviaMobileApp() {
           isLoadingProjects={isLoadingProjects}
           projectTasks={projectTasks}
           isLoadingTasks={isLoadingTasks}
+          taskPaginationMeta={taskPaginationMeta}
+          onTaskPageChange={(p: number) => loadTasks(activeProjectId, currentTaskFilter, p)}
+          onTaskFilterChange={(s: string) => loadTasks(activeProjectId, s, 1)}
           activeProjectName={activeProjectName}
           onProjectClick={handleProjectClick}
           projectPaginationMeta={projectPaginationMeta}
