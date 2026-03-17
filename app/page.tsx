@@ -356,16 +356,17 @@ export default function HaviaMobileApp() {
     setIsLoadingExpenses(false);
   };
 
-  const loadEvents = async () => {
+  const loadEvents = async (type: string = eventFilterType, label: string = eventFilterLabel) => {
     if (!apiToken || !userData?.id) return;
     setIsLoadingEvents(true);
     
     // Pass filters to API
-    let url = `haviacms/events?type=${eventFilterType}`;
-    if (eventFilterLabel) {
-      url += `&label_id=${eventFilterLabel}`;
+    let url = `haviacms/events?type=${type}`;
+    if (label) {
+      url += `&label_id=${label}`;
     }
 
+    console.log(`[LoadEvents] type=${type}, label=${label}, url=${url}`);
     const res = await fetchFromApi(url, apiToken);
     
     if (res.success) {
@@ -482,8 +483,8 @@ export default function HaviaMobileApp() {
       else if (subpageTitle === 'All Tasks') loadTasks();
       else if (subpageTitle === 'Finance') loadExpenses();
       else if (subpageTitle === 'Schedule') {
-        loadEvents();
-        loadEventLabels();
+        loadEvents(eventFilterType, eventFilterLabel);
+        if (eventLabels.length === 0) loadEventLabels();
       }
       else if (subpageTitle === 'Attendance') {
         loadAttendances();
@@ -502,7 +503,7 @@ export default function HaviaMobileApp() {
         loadNotif();
       }
     }
-  }, [subpageTitle, currentView, apiToken]);
+  }, [subpageTitle, currentView, apiToken, eventFilterType, eventFilterLabel]);
 
   const loadNotifications = async () => {
     if (!apiToken) return;
