@@ -9,6 +9,19 @@ interface Props {
 }
 
 export const FinanceFullSummary: React.FC<Props> = ({ data, isLoading, onBack }) => {
+  const renderLargeAmount = (amount: number, justifyAlign: string = "justify-end") => {
+    const abs = Math.abs(amount || 0);
+    if (abs >= 1000000000) {
+      return (
+        <span className={`flex items-baseline ${justifyAlign} gap-[2px]`}>
+          <span className="tracking-tighter">{amount < 0 ? '-' : ''}{(abs / 1000000000).toLocaleString('id-ID', { maximumFractionDigits: 1 })}</span>
+          <span className="text-[0.5rem] lowercase italic opacity-70 font-medium tracking-normal font-sans ml-0.5">milyar</span>
+        </span>
+      );
+    }
+    return <span className="text-[0.75rem] font-bold tracking-tighter leading-none">{formatCurrency(amount).replace('IDR', 'Rp')}</span>;
+  };
+
   return (
     <div className="space-y-6 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {isLoading ? (
@@ -35,7 +48,7 @@ export const FinanceFullSummary: React.FC<Props> = ({ data, isLoading, onBack })
                   </div>
                   <div className="text-right">
                     <p className="text-[0.5625rem] text-neutral-400 uppercase font-black tracking-widest mb-0.5">Budget</p>
-                    <p className="text-sm font-bold text-neutral-900 font-mono tracking-tighter">{formatCurrency(p.project_price)}</p>
+                    <div className="text-sm font-bold text-neutral-900 font-mono tracking-tighter">{renderLargeAmount(p.project_price)}</div>
                   </div>
                 </div>
 
@@ -67,21 +80,21 @@ export const FinanceFullSummary: React.FC<Props> = ({ data, isLoading, onBack })
                       </div>
                       <div className="h-2 bg-neutral-100 rounded-full overflow-hidden flex p-0.5">
                         <div 
-                          className="h-full rounded-full bg-[#C69C3D] transition-all duration-1000 opacity-60"
+                           className="h-full rounded-full bg-[#C69C3D] transition-all duration-1000 opacity-60"
                           style={{ width: `${p.progress}%` }}
                         ></div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 pt-2">
-                    <div className="bg-neutral-50 rounded-2xl p-4 border border-neutral-100">
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <div className="bg-neutral-50 rounded-2xl p-3 border border-neutral-100 flex flex-col justify-center min-w-0">
                       <p className="text-[0.5rem] text-neutral-400 uppercase font-black tracking-widest mb-1">Expenses</p>
-                      <p className="text-sm font-bold text-rose-600 font-mono">{formatCurrency(p.total_expense)}</p>
+                      <div className="text-sm font-bold text-rose-600 font-mono truncate">{renderLargeAmount(p.total_expense, "justify-start")}</div>
                     </div>
-                    <div className={`rounded-2xl p-4 border ${p.balance < 0 ? 'bg-rose-50 border-rose-100' : 'bg-[#C69C3D]/5 border-[#C69C3D]/10'}`}>
+                    <div className={`rounded-2xl p-3 border flex flex-col justify-center min-w-0 ${p.balance < 0 ? 'bg-rose-50 border-rose-100' : 'bg-[#C69C3D]/5 border-[#C69C3D]/10'}`}>
                       <p className="text-[0.5rem] text-neutral-400 uppercase font-black tracking-widest mb-1">Balance</p>
-                      <p className={`text-sm font-bold font-mono ${p.balance < 0 ? 'text-rose-600' : 'text-[#C69C3D]'}`}>{formatCurrency(p.balance)}</p>
+                      <div className={`text-sm font-bold font-mono truncate ${p.balance < 0 ? 'text-rose-600' : 'text-[#C69C3D]'}`}>{renderLargeAmount(p.balance, "justify-start")}</div>
                     </div>
                   </div>
                 </div>

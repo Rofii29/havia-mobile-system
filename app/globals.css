@@ -101,5 +101,5 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 html {
-  font-size: clamp(14px, 4vw, 18px);
+  font-size: clamp(16px, 4.5vw, 20px);
 }
