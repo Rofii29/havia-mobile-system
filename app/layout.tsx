@@ -55,7 +55,7 @@ export default function RootLayout({
                   canvas.width = 64; canvas.height = 64;
                   const ctx = canvas.getContext('2d');
                   
-                  const padding = 12; // padding scale
+                  const padding = 4; // padding scale
                   const maxWidth = canvas.width - padding * 2;
                   const maxHeight = canvas.height - padding * 2;
                   
